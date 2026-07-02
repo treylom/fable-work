@@ -2,7 +2,7 @@
 
 **A method for transferring "how a strong model works" into a harness — rules + verification gates + a benchmark — so other models inherit the working style.**
 
-`fable` is the name we give, in this project, to a model instance that developed an unusually good working style through extended real-world use: it decomposed goals honestly, verified before claiming completion, and reported blockers plainly instead of narrating around them. That style is not a weight update — it lived in habits, not parameters. `fable-work` is an attempt to encode that style externally, as a portable harness (situational rule files + mechanical verification gates), and then **measure** how much of it actually transfers to a different base model (e.g. an `opus`/`sonnet`-class model) once the harness is switched on.
+`fable-5` is a real model — Anthropic's Fable 5 (`claude-fable-5`), in the Claude 5 family. Over extended real-world use, the way we worked with it settled into an unusually good *working style*: goals decomposed honestly, work verified before "done" was claimed, blockers reported plainly instead of narrated around. Much of that style isn't in the model's weights — it lives in the habits and scaffolding built up around the model. `fable-work` is an attempt to encode that scaffolding externally, as a portable harness (situational rule files + mechanical verification gates), and then **measure** how much of the working style actually transfers to other — often cheaper — models (e.g. a `sonnet`-class model) once the harness is switched on.
 
 This repo is the public, generalized distribution of that harness. Internal names, paths, and identifiers from the environment it was developed in have been stripped; the logic and the measurement methodology have not.
 

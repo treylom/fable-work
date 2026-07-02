@@ -2,7 +2,7 @@
 
 ## The problem
 
-A model instance can develop a genuinely good working style through extended real-world use — decomposing goals honestly, verifying before claiming completion, reporting blockers plainly instead of narrating around them. That style lives in accumulated habit, not in model weights. When you move to a different model (a new version, a cheaper tier, a different provider's model), none of that habit carries over automatically. The new model is generally competent, but it doesn't know your house rules, and — separately — even a model that's been told the rules doesn't reliably enforce them on itself under time pressure.
+A capable model, used extensively, tends to end up wrapped in a genuinely good working style — goals decomposed honestly, work verified before completion is claimed, blockers reported plainly instead of narrated around. That style lives in accumulated habit and scaffolding *around* the model, not in the model weights. When you move to a different model (a new version, a cheaper tier, a different provider's model), none of that habit carries over automatically. The new model is generally competent, but it doesn't know your house rules, and — separately — even a model that's been told the rules doesn't reliably enforce them on itself under time pressure.
 
 `fable-work` treats "working style" as something you can encode *outside* the model, in three layers, and then measure whether the encoding actually recovers the behavior gap.
 
