@@ -8,6 +8,14 @@
 
 This repo is the public, generalized distribution of that harness. Internal names, paths, and identifiers from the environment it was developed in have been stripped; the logic and the measurement methodology have not.
 
+## Start here
+
+| You are… | Do this |
+|---|---|
+| on **Claude Code**, want the verification gate | copy [`hooks/`](hooks/) and follow the [step-by-step install](hooks/README.md) (~5 min), then seed your rule layer from the examples in [`rules/`](rules/) |
+| on **Codex** | install the upstream plugin [`fable-ish-codex`](https://github.com/Pandoll-AI/fable-ish-codex) instead — see [`codex/README.md`](codex/README.md) |
+| here to **measure** whether a harness actually transfers a working style | start at [Key finding](#key-finding) below, then run [`bench/`](bench/) against your own model |
+
 > 🇰🇷 한국어: **[README.ko.md](README.ko.md)**
 
 ![infographic](./docs/infographic-en.png)
@@ -55,9 +63,10 @@ fable-work/
 ├── LICENSE               — MIT (this repo's own contributions)
 ├── NOTICE                — Apache-2.0 attribution for the ported hook design
 ├── docs/
-│   ├── method.md          — the transfer method: rule patterns, verification ledger/stop-gate, benchmark loop
+│   ├── method.md          — the transfer method: rule patterns, verification ledger/stop-gate, benchmark loop, mining loop
 │   └── infographic-en.png / infographic-ko.png  — summary graphics (en / ko)
-├── hooks/                 — harness-agnostic, generalized verification hooks (rule patterns + evidence ledger + stop-gate)
+├── rules/                 — copyable example rule layer (situation index + trigger-keyed rule files)
+├── hooks/                 — harness-agnostic, generalized verification hooks (evidence ledger + stop-gate)
 ├── bench/                 — the harness-dependent vs. general-reasoning task set, scoring, and raw results
 └── codex/
     └── README.md          — how to use this with Codex, via the upstream fable-ish-codex plugin
@@ -65,7 +74,11 @@ fable-work/
 
 ## Quickstart
 
-**1. Install the hooks into your harness.**
+**1. Seed the rule layer.**
+
+Copy [`rules/`](rules/) into your harness workspace (e.g. `.claude/rules/`), point your always-loaded prompt at the index, and start replacing the example rows with your own house rules — one situation per file. The design rationale (why an index instead of front-loading, why rules must cite incidents) is in [`rules/README.md`](rules/README.md).
+
+**2. Install the hooks into your harness.**
 
 `hooks/` is the generalized, harness-agnostic form of the verification lifecycle — three files:
 
@@ -75,7 +88,7 @@ fable-work/
 
 Wire `verify-ledger.py` into your harness's post-tool-use event and `stop-verify-gate.py` into its stop / turn-end event; both import `fable_lib.py`. **[`hooks/README.md`](hooks/README.md) has the step-by-step Claude Code install** — the exact `settings.json` snippets, how to confirm the gate is live, and the kill switch. After wiring, run `hooks/tests/test_gate.py` — it's a runnable spec of the gate's contract. If your harness is Codex specifically, see [Codex integration](#codex-integration) below — you likely want the upstream plugin instead of a manual port.
 
-**2. Run the benchmark.**
+**3. Run the benchmark.**
 
 ```bash
 # run one fixture against one model, preserving the full tool-use transcript
@@ -95,7 +108,7 @@ If you're on Codex, prefer installing the upstream plugin this project's hook de
 
 ## Method
 
-The full write-up of the transfer method — rule-pattern design, the verification ledger / stop-gate mechanism, and the benchmark loop used to measure transfer — is in [`docs/method.md`](docs/method.md).
+The full write-up of the transfer method — rule-pattern design, the verification ledger / stop-gate mechanism, the benchmark loop used to measure transfer, and the mining loop that keeps the rule layer growing from real sessions — is in [`docs/method.md`](docs/method.md).
 
 ## License
 
