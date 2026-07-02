@@ -54,7 +54,7 @@ fable-work/
 ├── NOTICE                      — 이식한 훅 설계의 Apache-2.0 출처 표기
 ├── docs/
 │   ├── method.md                — 이전 방법: 규칙 패턴, 검증 원장/스톱게이트, 벤치 루프
-│   └── infographic-ko/en.png    — 요약 그래픽
+│   └── infographic-en.png / infographic-ko.png  — 요약 그래픽 (en / ko)
 ├── hooks/                       — 일반화된 검증 훅 (규칙 패턴 + 증거 원장 + 스톱게이트)
 ├── bench/                       — 하네스 의존 vs 일반 추론 과제셋·채점·결과
 └── codex/README.md              — Codex에서 쓰는 법 (upstream fable-ish-codex 플러그인 경유)
