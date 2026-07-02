@@ -6,7 +6,9 @@
 
 This repo is the public, generalized distribution of that harness. Internal names, paths, and identifiers from the environment it was developed in have been stripped; the logic and the measurement methodology have not.
 
-![infographic](./docs/infographic.png)
+> 🇰🇷 한국어: **[README.ko.md](README.ko.md)**
+
+![infographic](./docs/infographic-en.png)
 
 ## Key finding
 
@@ -32,7 +34,7 @@ Two more findings from the same measurement pass, because they change how you sh
 | hard-security | 96.5 | 95.2 |
 | real-work-7 | 79.3 | 75.3 |
 
-Raw per-task results and scoring scripts live in [`bench/`](bench/).
+**How scoring works** (six axes A1–A5 + a task-specific SPECIAL, with P0/P1 defect gates, judged on the actual tool-use transcript) and the full **per-task results** are in [`bench/results.md`](bench/results.md); the axes/anchors are in [`bench/rubric.md`](bench/rubric.md) and the judging procedure in [`bench/judge-prompt.md`](bench/judge-prompt.md).
 
 ## Repo structure
 
