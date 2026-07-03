@@ -67,7 +67,12 @@ fable-work/
 │   └── infographic-en.png / infographic-ko.png  — summary graphics (en / ko)
 ├── rules/                 — copyable example rule layer (situation index + trigger-keyed rule files)
 ├── hooks/                 — harness-agnostic, generalized verification hooks (evidence ledger + stop-gate)
+│   ├── requirements-lock.py   — opt-in completion-bias guard (locked feature signatures must keep existing)
+│   └── tests/
+│       ├── replay/            — violation corpus: past gate-worthy violations replayed as fixtures (block rate + corpus floor)
+│       └── probes/            — practice probes: the gate pipeline's own contracts, checked deterministically
 ├── bench/                 — the harness-dependent vs. general-reasoning task set, scoring, and raw results
+│   └── substrate-check.sh     — one-line substrate snapshot for model-transition rehearsals (before/after delta must be 0)
 └── codex/
     └── README.md          — how to use this with Codex, via the upstream fable-ish-codex plugin
 ```
@@ -86,7 +91,7 @@ Copy [`rules/`](rules/) into your harness workspace (e.g. `.claude/rules/`), poi
 - **`verify-ledger.py`** — a `PostToolUse(Write|Edit|Bash)` hook. After a tool call, if the action is a real verification (a test run, a scan, a cross-check) it records that as evidence in an ordered ledger. It only records — never blocks. Fail-open (any exception exits cleanly).
 - **`stop-verify-gate.py`** — a `Stop` hook. When the agent tries to end a turn *after* changing a harness/code surface with no successful verification recorded since that change, it emits `{"decision":"block"}` to bounce the stop once and tell the agent to actually verify. Capped at `MAX_STOP_BLOCKS`, passes through the loop-guard, fail-open — a broken hook never wedges a session.
 
-Wire `verify-ledger.py` into your harness's post-tool-use event and `stop-verify-gate.py` into its stop / turn-end event; both import `fable_lib.py`. **[`hooks/README.md`](hooks/README.md) has the step-by-step Claude Code install** — the exact `settings.json` snippets, how to confirm the gate is live, and the kill switch. After wiring, run `hooks/tests/test_gate.py` — it's a runnable spec of the gate's contract. If your harness is Codex specifically, see [Codex integration](#codex-integration) below — you likely want the upstream plugin instead of a manual port.
+Wire `verify-ledger.py` into your harness's post-tool-use event and `stop-verify-gate.py` into its stop / turn-end event; both import `fable_lib.py`. **[`hooks/README.md`](hooks/README.md) has the step-by-step Claude Code install** — the exact `settings.json` snippets, how to confirm the gate is live, and the kill switch. After wiring, run `hooks/tests/test_gate.py` — it's a runnable spec of the gate's contract. Two companion suites keep the gate honest over time: `hooks/tests/replay/run.py` replays archived violation scenarios (block rate must stay 100%, and a corpus floor stops fixture-deletion from faking it), and `hooks/tests/probes/run.py` checks the pipeline's own contracts (exit-code conventions, ledger schema, escape hatches). When you switch reasoning models, `bench/substrate-check.sh` snapshots all of it in one JSON line — run it before and after; delta 0 is what "the harness survived the model swap" looks like as a measurement. Adoption reasoning for these pieces: [docs/decision-history.md](docs/decision-history.md). If your harness is Codex specifically, see [Codex integration](#codex-integration) below — you likely want the upstream plugin instead of a manual port.
 
 **3. Run the benchmark.**
 
