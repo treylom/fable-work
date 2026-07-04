@@ -1,6 +1,6 @@
 # Codex integration
 
-`fable-work`'s hook design — request-risk classification, a destructive-action block-list, a tool-use evidence ledger, and a capped verification stop-gate (see [`docs/method.md`](../docs/method.md)) — is adapted from **`fable-ish-codex`**, a Codex plugin by Pandoll-AI:
+`tofable`'s hook design — request-risk classification, a destructive-action block-list, a tool-use evidence ledger, and a capped verification stop-gate (see [`docs/method.md`](../docs/method.md)) — is adapted from **`fable-ish-codex`**, a Codex plugin by Pandoll-AI:
 
 - Repository: <https://github.com/Pandoll-AI/fable-ish-codex>
 - License: Apache License, Version 2.0
@@ -41,7 +41,7 @@ Optional extras from the upstream project, if you want stronger local policy:
 ## Relationship between this repo and `fable-ish-codex`
 
 - **`fable-ish-codex`** is the origin implementation: Codex-native, Apache-2.0, maintained by Pandoll-AI. If you're on Codex, prefer it — it's the maintained, native plugin.
-- **`fable-work`** (this repository) generalizes the same hook lifecycle for use in coding-agent harnesses other than Codex, and adds a benchmark loop (see [`bench/`](../bench/)) for measuring how much of the target "working style" transfer actually shows up in scored task performance rather than just being installed.
+- **`tofable`** (this repository) generalizes the same hook lifecycle for use in coding-agent harnesses other than Codex, and adds a benchmark loop (see [`bench/`](../bench/)) for measuring how much of the target "working style" transfer actually shows up in scored task performance rather than just being installed.
 - Use [`../hooks/`](../hooks/) in this repo only if your harness is not Codex, or if you specifically need the harness-agnostic port. On Codex, the upstream plugin above is the more direct and better-maintained path.
 
 ## Limits
@@ -58,4 +58,4 @@ Use sandboxing, approvals, automated tests, linters, code review, and deployment
 
 ## License and citation
 
-`fable-ish-codex` is licensed under Apache-2.0. If you use or adapt it, retain its license/attribution notices and consider citing it via its `CITATION.cff`. See [`../NOTICE`](../NOTICE) in this repository for how `fable-work` itself attributes the adapted portions.
+`fable-ish-codex` is licensed under Apache-2.0. If you use or adapt it, retain its license/attribution notices and consider citing it via its `CITATION.cff`. See [`../NOTICE`](../NOTICE) in this repository for how `tofable` itself attributes the adapted portions.

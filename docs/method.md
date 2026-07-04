@@ -4,7 +4,7 @@
 
 A capable model, used in earnest even for a short while, tends to end up wrapped in a genuinely good working style — goals decomposed honestly, work verified before completion is claimed, blockers reported plainly instead of narrated around. That style lives in accumulated habit and scaffolding *around* the model, not in the model weights. When you move to a different model (a new version, a cheaper tier, a different provider's model), none of that habit carries over automatically. The new model is generally competent, but it doesn't know your house rules, and — separately — even a model that's been told the rules doesn't reliably enforce them on itself under time pressure.
 
-`fable-work` treats "working style" as something you can encode *outside* the model, in three layers, and then measure whether the encoding actually recovers the behavior gap.
+`tofable` treats "working style" as something you can encode *outside* the model, in three layers, and then measure whether the encoding actually recovers the behavior gap.
 
 ## Layer 1 — rule patterns
 

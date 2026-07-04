@@ -1,6 +1,6 @@
 # Case study: closing the loop — from one day's friction to two hooks
 
-This is a worked example of the fable-work cycle: **measure friction →
+This is a worked example of the tofable cycle: **measure friction →
 map it against a benchmark → find where discipline exists only as prose →
 harden the gap into a hook.** The whole cycle ran in one day, and the two
 hooks that came out of it ship in this repo (`hooks/cutover-review-gate.py`,
