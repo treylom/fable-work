@@ -15,6 +15,12 @@
 #                                  imperative-checklist rule variant from
 #                                  rules/compact/ (arm for models that do
 #                                  not translate prose rules into behavior).
+#            "tofable-v4"        — "tofable" plus the ledger-v4 gates mined
+#                                  from source-model work logs: blind-retry
+#                                  (PreToolUse) and the Task|Agent ledger
+#                                  matcher that arms the subordinate-evidence
+#                                  Stop check. Kept as a separate arm so the
+#                                  v4 delta is measurable against "tofable".
 #
 # Environment isolation: every arm runs with --setting-sources "" and
 # --strict-mcp-config, so the host user's settings (hooks, plugins, memory
@@ -51,7 +57,7 @@ FIXTURE="${1:?usage: run.sh <fixture> <model> [run_tag] [harness]}"
 MODEL="${2:?usage: run.sh <fixture> <model> [run_tag] [harness]}"
 TAG="${3:-run}"
 HARNESS="${4:-vanilla}"
-case "$HARNESS" in vanilla|tofable|tofable-compact) ;; *) echo "harness must be vanilla|tofable|tofable-compact" >&2; exit 1;; esac
+case "$HARNESS" in vanilla|tofable|tofable-compact|tofable-v4) ;; *) echo "harness must be vanilla|tofable|tofable-compact|tofable-v4" >&2; exit 1;; esac
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
@@ -81,18 +87,25 @@ if [ -x "$SRC/materialize.sh" ]; then bash "$SRC/materialize.sh" "$RUN/work"; fi
 # Ledger state is isolated per run (FABLE_STATE_DIR inside the run dir) so
 # arms never share bounce/evidence bookkeeping.
 EXTRA_ARGS=()
-if [ "$HARNESS" = "tofable" ] || [ "$HARNESS" = "tofable-compact" ]; then
+if [ "$HARNESS" = "tofable" ] || [ "$HARNESS" = "tofable-compact" ] || [ "$HARNESS" = "tofable-v4" ]; then
   RULES_DIR="$REPO_DIR/rules"
   [ "$HARNESS" = "tofable-compact" ] && RULES_DIR="$REPO_DIR/rules/compact"
   RULES="$(cat "$RULES_DIR/verification.md" "$RULES_DIR/delegation.md" "$RULES_DIR/continuation.md")"
-  python3 - "$RUN" "$REPO_DIR" <<'PY'
+  python3 - "$RUN" "$REPO_DIR" "$HARNESS" <<'PY'
 import json, sys, pathlib
-run, repo = pathlib.Path(sys.argv[1]), sys.argv[2]
+run, repo, harness = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]
 hooks = lambda name: f"python3 {repo}/hooks/{name}"
+v4 = harness == "tofable-v4"
+pre = [{"type": "command", "command": hooks("surfacing-gate.py")}]
+if v4:
+    pre.append({"type": "command", "command": hooks("blind-retry-gate.py")})
 settings = {
     "hooks": {
-        "PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": hooks("surfacing-gate.py")}]}],
-        "PostToolUse": [{"matcher": "Write|Edit|Bash", "hooks": [{"type": "command", "command": hooks("verify-ledger.py")}]}],
+        "PreToolUse": [{"matcher": "Bash", "hooks": pre}],
+        "PostToolUse": [{
+            "matcher": "Write|Edit|Bash|Task|Agent" if v4 else "Write|Edit|Bash",
+            "hooks": [{"type": "command", "command": hooks("verify-ledger.py")}],
+        }],
         "Stop": [{"hooks": [
             {"type": "command", "command": hooks("stop-verify-gate.py")},
             {"type": "command", "command": hooks("continuation-gate.py")},
