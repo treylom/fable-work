@@ -8,22 +8,6 @@
 
 This repo is the public, generalized distribution of that harness. Internal names, paths, and identifiers from the environment it was developed in have been stripped; the logic and the measurement methodology have not.
 
-![how a working style transfers](./assets/hero-discipline-transfer.png)
-
-## The problem, in plain words
-
-If you run AI agents on real work for a few months and keep honest logs, the same failures keep coming back — ours did, across every model we ran. We mined our full incident history (~228 atomic incidents from rules regressions, meeting archives, bug reports, and conversation logs) and they collapse into a short list. The five that cost us the most:
-
-| # | Failure pattern | What it looks like in practice |
-|---|---|---|
-| 1 | **A written rule is not enforcement** | The rule sits in a markdown file the agent has read. Under load, it skips it anyway. Documentation ≠ a gate that actually fires. |
-| 2 | **"Done" declared at the wrong layer** | The build passed, so the agent says "shipped" — but the file never reached the place the user actually looks. Middle-of-pipeline green gets reported as end-to-end green. |
-| 3 | **Trusting a worker's "done" text** | A sub-agent reports "6 images generated" — disk has 3, two are byte-identical copies. Nobody checked the files. |
-| 4 | **Premature stop / self-granted deferral** | Goals remain, but the agent decides "let's continue tomorrow" on its own, or halts "to be safe" without checking the safety nets that already exist. |
-| 5 | **"It doesn't exist" after one shallow look** | One grep with the wrong keyword, zero hits, confident "there is no such code" — while the thing sits on an unmerged branch. |
-
-Every entry in `rules/` cites the real incident it was mined from, and every gate in `hooks/` exists because the written version of the same rule was skipped in practice (pattern #1 — which is also why this project treats *documentation-only rules as the root failure*). The benchmark in `bench/` plants exactly these failure patterns as traps and measures whether a model, with and without the harness, walks into them.
-
 ## Start here
 
 | You are… | Do this |
@@ -36,26 +20,7 @@ Every entry in `rules/` cites the real incident it was mined from, and every gat
 
 ![infographic](./docs/infographic-en.png)
 
-## Key finding — Cycle 3: the same harness, ON vs OFF, on two models
-
-The direct before/after experiment: **10 real-work fixtures × 2 models (an `opus`-class and a `sonnet`-class) × harness OFF/ON = 40 runs**, every run graded by a cross-tier judge on the *tool-use transcript* (what the model actually did), not the self-report. The fixtures plant the five failure patterns above as traps; scoring axes and P0/P1 defect grades are in [`bench/rubric.md`](bench/rubric.md).
-
-| arm | avg score | P0/P1 defects | cost | avg duration |
-|---|---:|---:|---:|---:|
-| opus, harness OFF | 89.7 | **2** | $6.40 | 91s |
-| **opus, harness ON** | **93.3** | **0** | $7.43 | 106s |
-| sonnet, harness OFF | 89.8 | 3 | $4.20 | 84s |
-| sonnet, harness ON | 87.0 | 2 | $4.38 | 82s |
-
-Three things the numbers actually say:
-
-1. **On the stronger model, the harness turns rules into behavior.** The absence-claim trap ("is there rate-limit handling in this repo?" — the directly-named module only exists on an unmerged branch): vanilla opus declared "not found" (a P1 defect); harness-ON opus ran `git log --all`, found the branch, and reported the real answer — **74 → 97**. The delegation trap (worker claims 6 files, disk has 3 with duplicated hashes): **82 → 96**, because the run actually checked hashes and timestamps. Those are the exact sentences written in [`rules/`](rules/), showing up as actions. Net: **P0/P1 defects 2 → 0**, for +16% cost and +16% time.
-2. **On the cheaper model, the same harness did not transfer (−2.8 avg).** Some disciplines improved (it stopped deferring mid-task, and it surfaced deletions before running them — two P1s resolved), but on judgment-heavy traps the injected rules didn't become behavior, and one harness-ON run drifted into confused claims the transcript doesn't support. **Working-style transfer is conditional on the receiving model being able to translate a rule into an action** — a harness is not a free upgrade.
-3. **Defect counts are the sturdier signal.** Per-fixture scores swing (each cell is n=1 — stated plainly in the [validity notes](#validity)); the P0/P1 movement (2→0 on opus) is the result we'd bet on. Full per-fixture table and raw run artifacts: `bench/` + the results doc in this repo's history.
-
-<a name="validity"></a>**Validity notes, honestly:** one run per fixture×arm (individual deltas are noisy — read category sums and defect counts, not single cells); one judge pass (cross-tier but same vendor); host infra hooks were inherited identically by all four arms (neutral to the A/B delta); headless runs measure the judgment layer, not real rendering or multi-hour pipelines.
-
-## Key finding — Cycle 1: where the gap even is
+## Key finding
 
 We ran the same task set on two comparable models (`fable-5` and `sonnet-5`), **both without the harness** — a vanilla control arm (a scratch working dir where the house rules aren't loaded). The tasks split cleanly into two kinds:
 
