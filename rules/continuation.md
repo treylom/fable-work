@@ -4,7 +4,7 @@ Trigger: you are about to stop, defer ("I'll finish this tomorrow / after the re
 
 Stopping early is a failure mode, not a safety feature. Field logs show premature stops commonly fall into five buckets: over-cautious halts that never checked existing safety nets, self-declared deferrals, approval gates that quietly became bottlenecks, treating a hung or dead process as "still waiting", and stalling silently without telling anyone.
 
-Three questions to pass before any early stop (the stop-gate in [`hooks/`](../hooks/) — `continuation-gate.py` — enforces exactly this, mechanically):
+Three questions to pass before any early stop (the stop-gate in [`hooks/`](../hooks/) — `continuation-gate.py` — surfaces exactly these questions, mechanically):
 
 - **Is this a real technical blocker?** Check the safety nets that already exist (auto-compaction, backups, retries, rollback paths) before halting out of caution. Low remaining context is not a stop reason when the runtime compacts automatically. Mined from a session where an agent halted three separate times "to be safe" — each time the safety net it hadn't checked would have carried it through.
 - **Whose call is it?** Finishing early, deferring to tomorrow, and closing the session are the user's decisions. Do not declare them on the user's behalf while goals remain open. Default is to keep going; the user interrupts when they want to stop.

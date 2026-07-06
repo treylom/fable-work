@@ -41,12 +41,12 @@ DEFERRAL_PATTERNS = [
     r"\bcall(?:ing)?\s+it\s+(?:a\s+(?:day|night)|here)\b",
     r"\bdefer(?:ring)?\s+(?:this|the\s+rest|it)\b",
     # Korean: compound stop-intent phrases (bare "내일" alone is too noisy)
-    r"내일\s*(?:이어|계속|마저|다시|아침에)",
+    r"내일\s*(?:이어|계속|마저|다시|아침에\s*(?:이어|계속|마저|다시))",  # 아침에 alone is noisy ("내일 아침에 회의") — require a trailing deferral verb
     r"다음\s*(?:세션|턴|기회)\s*(?:에|으로)",
     r"오늘은\s*여기까지",
     r"여기서\s*(?:마무리|정리하|멈추)",
     r"나중에\s*(?:이어|계속|마저)",
-    r"(?:으로|로)?\s*이월",
+    r"이월(?:하|했|됨|된|시키|시켜|할)",  # verb-anchored: bare 이월 collides with 이월(February) in dates like "이월 15일"
 ]
 DEFERRAL_RE = re.compile("|".join(DEFERRAL_PATTERNS), re.IGNORECASE)
 

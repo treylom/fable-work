@@ -84,6 +84,24 @@ class ContinuationGateTests(unittest.TestCase):
         proc = run_gate(self.payload("The deploy window opens tomorrow at 9am; monitoring is armed."), self.env)
         self.assertFalse(blocked(proc), proc.stdout)  # not a first-person deferral
 
+    def test_february_date_passes(self) -> None:
+        # reviewer-found false positive: 이월(February) in a date is not a deferral
+        proc = run_gate(self.payload("배포는 이월 15일로 잡혀 있습니다."), self.env)
+        self.assertFalse(blocked(proc), proc.stdout)
+
+    def test_carry_over_verb_blocks(self) -> None:
+        proc = run_gate(self.payload("남은 검증은 다음 주로 이월하겠습니다."), self.env)
+        self.assertTrue(blocked(proc), proc.stdout)
+
+    def test_tomorrow_morning_meeting_passes(self) -> None:
+        # reviewer-found false positive: a plain schedule mention is not a deferral
+        proc = run_gate(self.payload("내일 아침에 회의가 있어요."), self.env)
+        self.assertFalse(blocked(proc), proc.stdout)
+
+    def test_tomorrow_morning_continue_blocks(self) -> None:
+        proc = run_gate(self.payload("남은 작업은 내일 아침에 이어서 하겠습니다."), self.env)
+        self.assertTrue(blocked(proc), proc.stdout)
+
     # --- boundary ---
     def test_stop_hook_active_passes(self) -> None:
         payload = self.payload("I'll finish this tomorrow.")
