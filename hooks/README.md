@@ -10,7 +10,7 @@ that can run a command on a post-tool event and on a turn-end event; only
 the wiring syntax differs. If you're on **Codex**, prefer the upstream
 plugin instead — see [`../codex/README.md`](../codex/README.md).
 
-## The three files
+## The files
 
 | File | Role | Hook event |
 |---|---|---|
@@ -18,6 +18,7 @@ plugin instead — see [`../codex/README.md`](../codex/README.md).
 | `verify-ledger.py` | records real verifications (test run / scan / cross-check) as ordered evidence. Records only, never blocks. Fail-open. | `PostToolUse` |
 | `stop-verify-gate.py` | if the turn changed a code/harness surface with no verification recorded since, emits `{"decision":"block"}` to bounce the stop once. Capped, fail-open. | `Stop` |
 | `continuation-gate.py` | if the final message declares an early stop or deferral ("I'll finish tomorrow") while work may remain, bounces the stop once with the three questions from [`../rules/continuation.md`](../rules/continuation.md). Capped at 1/session, fail-open. | `Stop` |
+| `surfacing-gate.py` | if a Bash command carries a destructive token (recursive/forced `rm`, force-push, `reset --hard`, `find -delete`, `rsync --delete`, …), bounces it once and asks for the op, targets, and safety rationale in the visible reply; the identical command passes on retry. Capped per command + 5/session, fail-open. | `PreToolUse` |
 
 ## Install (Claude Code)
 
@@ -36,7 +37,8 @@ Pick a stable absolute path for the three files — e.g. `~/.claude/fable-hooks/
 mkdir -p ~/.claude/fable-hooks
 cp fable-work/hooks/fable_lib.py fable-work/hooks/verify-ledger.py \
    fable-work/hooks/stop-verify-gate.py \
-     fable-work/hooks/continuation-gate.py ~/.claude/fable-hooks/
+     fable-work/hooks/continuation-gate.py \
+     fable-work/hooks/surfacing-gate.py ~/.claude/fable-hooks/
 ```
 
 **2. Wire them into `~/.claude/settings.json`.**
@@ -47,6 +49,14 @@ don't overwrite existing hooks). Use the **absolute path** from step 1:
 ```json
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 $HOME/.claude/fable-hooks/surfacing-gate.py" }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit|Bash",
