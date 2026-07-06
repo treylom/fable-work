@@ -16,4 +16,5 @@ Adopted / rejected decisions with reasons, so future sessions re-discover the
 | rule metabolism (242→91-style triage) | **rejected (n/a)** | our `rules/` layer is a small example set, not a bloated production corpus; the concept is documented in the plan for readers who have the bloat problem |
 | rule-budget gate | **rejected (YAGNI)** | same reason as above — shipping a bloat gate for an example-sized rules layer is unused complexity; adopt only if a real installer reports re-bloat |
 
-Plan with full context: [fable-week-adoption-plan.md](./fable-week-adoption-plan.md)
+(The full adoption-round planning doc was an internal working file and is
+kept out of the public repo; this table is the complete decision record.)

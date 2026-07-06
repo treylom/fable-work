@@ -1,6 +1,6 @@
 # Installing the fable verification hooks
 
-These hooks are the mechanical half of `fable-work`: an evidence ledger that
+These hooks are the mechanical half of `tofable`: an evidence ledger that
 records what actually ran, and a stop-gate that won't let a turn end
 claiming "done" on a harness/code change it never verified. They are plain
 Python scripts driven over stdin/stdout — no dependencies beyond Python 3.
@@ -43,21 +43,21 @@ way through, that's a bug in the gate — file it.
 **1. Get the files onto your machine.**
 
 ```bash
-git clone https://github.com/treylom/fable-work
+git clone https://github.com/treylom/tofable
 ```
 
 (Or copy just the `hooks/` directory somewhere — if you do, adjust the
-`fable-work/hooks/...` paths in the commands below to wherever you put it.)
+`tofable/hooks/...` paths in the commands below to wherever you put it.)
 
-Pick a stable absolute path for the three files — e.g. `~/.claude/fable-hooks/`:
+Pick a stable absolute path for the hook files — e.g. `~/.claude/fable-hooks/`:
 
 ```bash
 mkdir -p ~/.claude/fable-hooks
-cp fable-work/hooks/fable_lib.py fable-work/hooks/verify-ledger.py \
-   fable-work/hooks/stop-verify-gate.py \
-     fable-work/hooks/continuation-gate.py \
-     fable-work/hooks/surfacing-gate.py \
-     fable-work/hooks/blind-retry-gate.py ~/.claude/fable-hooks/
+cp tofable/hooks/fable_lib.py tofable/hooks/verify-ledger.py \
+   tofable/hooks/stop-verify-gate.py \
+     tofable/hooks/continuation-gate.py \
+     tofable/hooks/surfacing-gate.py \
+     tofable/hooks/blind-retry-gate.py ~/.claude/fable-hooks/
 ```
 
 **2. Wire them into `~/.claude/settings.json`.**
@@ -112,7 +112,7 @@ takes no matcher — it always fires on every turn-end. All scripts find
 > ```json
 > "PostToolUse": [
 >   { "matcher": "...", "hooks": [ /* your existing hook */ ] },
->   { "matcher": "Write|Edit|Bash", "hooks": [
+>   { "matcher": "Write|Edit|Bash|Task|Agent", "hooks": [
 >       { "type": "command", "command": "python3 $HOME/.claude/fable-hooks/verify-ledger.py" } ] }
 > ]
 > ```
@@ -120,7 +120,7 @@ takes no matcher — it always fires on every turn-end. All scripts find
 **3. Confirm it's actually wired (don't assume).**
 
 ```bash
-python3 fable-work/hooks/tests/test_gate.py
+python3 tofable/hooks/tests/test_gate.py
 ```
 
 This drives the hooks as real subprocesses and asserts the gate blocks when
