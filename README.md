@@ -65,10 +65,14 @@ The single most reproduced finding across our measurement cycles: **a written ru
 | `stop-verify-gate` | on Stop | code/config changed, but no successful verification ran *after* the change |
 | — absence check | on Stop | "X doesn't exist" claimed after consulting git shallowly (no `--all` / `branch -a` boundary expansion) |
 | — claim-evidence check | on Stop | a precise count ("83 messages") or an identity claim ("byte-for-byte identical") with no mechanical check (`wc -l`, `grep -c`, `diff`, `shasum`) in the tool log |
+| — subordinate-evidence check | on Stop | completion declared after delegating to a subagent, with no verification recorded *after* the delegate returned — a delegate's "done" is a claim, not evidence |
 | `continuation-gate` | on Stop | deferral language ("I'll continue tomorrow") while work remains and nothing is user-blocked |
 | `surfacing-gate` | before Bash | destructive commands (recursive rm, force-push, hard reset) about to run without being surfaced in the response first |
+| `blind-retry-gate` | before Bash | re-running the byte-identical command that just failed, with no diagnosis step in between |
 
 Every gate bounces **once**, always has a path through (show the evidence, or state explicitly why it's impossible), and fails open — a broken gate never wedges a session. Nothing is hard-forbidden by design: gates demand evidence, they don't ban actions. Kill switch: `FABLE_GATE_OFF=1`.
+
+The two newest checks (subordinate-evidence, blind-retry) were mined from the source model's actual work logs cross-referenced against a 68-incident failure corpus — they cover the two worst-recurrence axes (trusting a delegate's unverified "done"; re-attacking an error with the identical command). Their unit contracts are tested; their bench effect is the next measurement cycle, so the table below does not include them yet.
 
 **Measured effect** (14 fixtures × 2–3 seeds per arm; *composite* = avg − 15·P0 − 5·P1 per fixture cell, so defects can't hide behind style points):
 

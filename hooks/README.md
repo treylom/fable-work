@@ -33,9 +33,10 @@ way through, that's a bug in the gate — file it.
 |---|---|---|
 | `fable_lib.py` | shared library (surface heuristic, ledger, gate logic, kill switch). The other two import it. | — |
 | `verify-ledger.py` | records real verifications (test run / scan / cross-check) plus git-usage/boundary-expansion evidence as an ordered ledger. Records only, never blocks. Fail-open. | `PostToolUse` |
-| `stop-verify-gate.py` | two checks: (1) if the turn changed a code/harness surface with no verification recorded since, bounce the stop; (2) if the final message asserts something doesn't exist after consulting git without an all-refs check (`git log --all` / `branch -a`), bounce once with the boundary-expansion checklist. Both capped, fail-open. | `Stop` |
+| `stop-verify-gate.py` | four checks: (1) if the turn changed a code/harness surface with no verification recorded since, bounce the stop; (2) if the final message asserts something doesn't exist after consulting git without an all-refs check (`git log --all` / `branch -a`), bounce once with the boundary-expansion checklist; (3) if it states a precise count / identity claim with no mechanical check in the tool log, bounce once; (4) if it declares completion after a subagent (Task/Agent) ran with no verification recorded **after** the delegate returned, bounce once — a delegate's "done" is a claim, not evidence. All capped, fail-open. | `Stop` |
 | `continuation-gate.py` | if the final message declares an early stop or deferral ("I'll finish tomorrow") while work may remain, bounces the stop once with the three questions from [`../rules/continuation.md`](../rules/continuation.md). Capped at 1/session, fail-open. | `Stop` |
 | `surfacing-gate.py` | if a Bash command carries a destructive token (recursive/forced `rm`, force-push, `reset --hard`, `find -delete`, `rsync --delete`, …), bounces it once and asks for the op, targets, and safety rationale in the visible reply; the identical command passes on retry. Capped per command + 5/session, fail-open. | `PreToolUse` |
+| `blind-retry-gate.py` | if the immediately preceding Bash command failed and the incoming call re-runs it byte-identical, bounces once: name the failure cause, run one probe, or change the command. The identical re-run passes after the bounce (a deliberate transient-flake retry costs one bounce); any different command resets the chain. Capped 5/session, fail-open. | `PreToolUse` |
 
 ## Install (Claude Code)
 
@@ -55,7 +56,8 @@ mkdir -p ~/.claude/fable-hooks
 cp fable-work/hooks/fable_lib.py fable-work/hooks/verify-ledger.py \
    fable-work/hooks/stop-verify-gate.py \
      fable-work/hooks/continuation-gate.py \
-     fable-work/hooks/surfacing-gate.py ~/.claude/fable-hooks/
+     fable-work/hooks/surfacing-gate.py \
+     fable-work/hooks/blind-retry-gate.py ~/.claude/fable-hooks/
 ```
 
 **2. Wire them into `~/.claude/settings.json`.**
@@ -70,13 +72,14 @@ don't overwrite existing hooks). Use the **absolute path** from step 1:
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 $HOME/.claude/fable-hooks/surfacing-gate.py" }
+          { "type": "command", "command": "python3 $HOME/.claude/fable-hooks/surfacing-gate.py" },
+          { "type": "command", "command": "python3 $HOME/.claude/fable-hooks/blind-retry-gate.py" }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|Bash",
+        "matcher": "Write|Edit|Bash|Task|Agent",
         "hooks": [
           { "type": "command", "command": "python3 $HOME/.claude/fable-hooks/verify-ledger.py" }
         ]
@@ -95,9 +98,11 @@ don't overwrite existing hooks). Use the **absolute path** from step 1:
 ```
 
 `verify-ledger.py` goes on `PostToolUse` (matched to the tools that change
-state — `Write|Edit|Bash`); `stop-verify-gate.py` goes on `Stop`, which
-takes no matcher — it always fires on every turn-end. Both scripts find
-`fable_lib.py` next to themselves, so keep the three together.
+state or delegate work — `Write|Edit|Bash|Task|Agent`; the `Task|Agent`
+part anchors the subordinate-evidence check, so include it even if your
+sessions rarely delegate); `stop-verify-gate.py` goes on `Stop`, which
+takes no matcher — it always fires on every turn-end. All scripts find
+`fable_lib.py` next to themselves, so keep them together.
 
 > **If you already have `PostToolUse` or `Stop` hooks**, don't paste this
 > block over the existing key — that silently clobbers them. `PostToolUse`

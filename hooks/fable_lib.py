@@ -39,6 +39,8 @@ from typing import Any
 MAX_STOP_BLOCKS = 2
 MAX_ABSENCE_BLOCKS = 1
 MAX_CLAIM_BLOCKS = 1
+MAX_SUBAGENT_BLOCKS = 1
+MAX_RETRY_BLOCKS = 5  # session-wide cap for the blind-retry gate (false-positive friction bound)
 
 DEFAULT_LEDGER: dict[str, Any] = {
     "changed_files_seen": False,
@@ -55,6 +57,13 @@ DEFAULT_LEDGER: dict[str, Any] = {
     "boundary_expansion_seen": False,  # git looked beyond the checked-out tree (--all / branch -a / …)
     "absence_blocks": 0,       # absence-gate bounce count
     "claim_blocks": 0,         # claim-evidence gate bounce count (ledger v3)
+    # --- ledger v4 (fable log-mining, 2026-07-07: C3 blind-retry / C5 subordinate-evidence) ---
+    "last_bash_cmd_hash": "",  # hash of the most recent Bash command (retry-chain anchor)
+    "last_bash_failed": False, # whether that command's output carried a failure signal
+    "retry_bounced": [],       # command hashes already bounced once by the blind-retry gate
+    "retry_blocks": 0,         # blind-retry-gate bounce count
+    "subagent_seq": 0,         # event_seq of the most recent Task/Agent (subagent) call
+    "subagent_blocks": 0,      # subordinate-evidence gate bounce count
     "event_seq": 0,          # monotonic event counter (code-review feedback — closes the
                               # "verify succeeds, then code changes" ordering bypass)
     "last_gated_seq": 0,     # event_seq of the most recent gated (harness/code) change
@@ -149,6 +158,21 @@ MECH_EVIDENCE_RE = re.compile(
     r"(?i)\b(wc\s+-[lwc]|grep\s+-[a-z]*c|diff|cmp|comm|shasum|sha256sum|md5(?:sum)?|"
     r"uniq\s+-c|sort\s+.*\|\s*uniq|find\s+.*\|\s*wc|ls\s+.*\|\s*wc|len\()"
 )
+# --- subordinate-evidence gate (ledger v4 — fable log-mining C5) ---
+# Failure axis with the worst recurrence in the incident corpus (2026-07-07,
+# 68 incidents): trusting a subagent/tool "done/success" as the completion
+# basis — 5 recurrences of tool-less fake "success" text, 3 of "Connected"
+# false-greens, 6 days of unverified "✓ sent". The mined fable behavior is
+# the inverse: after a delegate reports, re-derive the claim independently
+# (re-run the test, stat the artifact, grep the output) before accepting.
+SUBAGENT_TOOLS = {"Task", "Agent"}
+# Completion-claim shapes for the final reply (kept light — the mechanical
+# anchor is "a subagent ran and nothing was verified after it").
+COMPLETION_CLAIM_RE = re.compile(
+    r"(?i)(?:\b(?:done|complete[d]?|finished|delivered|shipped|all\s+set)\b"
+    r"|✅|\bGREEN\b|\bCLEAN\b"
+    r"|완료|끝났|마쳤|마무리|성공적으로|반영(?:됐|되었)|처리(?:됐|되었))"
+)
 
 SUCCESS_STATUSES = {"success", "succeeded", "completed", "complete", "ok", "passed", "pass"}
 FAILURE_STATUSES = {"failed", "failure", "error", "errored", "fatal", "timeout", "timed_out"}
@@ -210,14 +234,17 @@ def load_ledger(input_data: dict[str, Any]) -> dict[str, Any]:
     ledger = default_ledger()
     if isinstance(data, dict):
         ledger.update({key: data.get(key, value) for key, value in ledger.items()})
-    for key in ("changed_paths", "change_kinds", "verification_commands", "verification_results", "failures", "surfaced_ops", "git_commands"):
+    for key in ("changed_paths", "change_kinds", "verification_commands", "verification_results", "failures", "surfaced_ops", "git_commands", "retry_bounced"):
         if not isinstance(ledger.get(key), list):
             ledger[key] = []
-    for key in ("event_seq", "last_gated_seq", "stop_blocks", "continuation_blocks", "surfacing_blocks", "absence_blocks", "claim_blocks"):
+    for key in ("event_seq", "last_gated_seq", "stop_blocks", "continuation_blocks", "surfacing_blocks", "absence_blocks", "claim_blocks", "retry_blocks", "subagent_seq", "subagent_blocks"):
         if not isinstance(ledger.get(key), int):
             ledger[key] = 0
-    if not isinstance(ledger.get("boundary_expansion_seen"), bool):
-        ledger["boundary_expansion_seen"] = False
+    for key in ("boundary_expansion_seen", "last_bash_failed"):
+        if not isinstance(ledger.get(key), bool):
+            ledger[key] = False
+    if not isinstance(ledger.get("last_bash_cmd_hash"), str):
+        ledger["last_bash_cmd_hash"] = ""
     return ledger
 
 
@@ -582,5 +609,55 @@ def should_block_claim_evidence(ledger: dict[str, Any], final_text: str) -> tupl
         "claim ('appears to match; not mechanically verified'). "
         "If a mechanical check is genuinely impossible here, say so "
         "explicitly and stop again — this gate bounces once."
+    )
+    return True, reason
+
+
+def has_verification_after(ledger: dict[str, Any], seq: int) -> bool:
+    """Any recorded verification whose event_seq is later than `seq`."""
+    for record in ledger.get("verification_results", []):
+        if not isinstance(record, dict):
+            continue
+        try:
+            if int(record.get("seq") or 0) > seq:
+                return True
+        except (TypeError, ValueError):
+            continue
+    return False
+
+
+def should_block_subordinate_evidence(ledger: dict[str, Any], final_text: str) -> tuple[bool, str]:
+    """Subordinate-evidence check (ledger v4 — mined behavior C5).
+
+    Arms only when all three hold: (a) a subagent (Task/Agent) ran this
+    session, (b) NO verification-class command was recorded after the last
+    subagent call, (c) the final reply declares completion. The bounce asks
+    for one independent re-derivation of the delegate's claim — stat the
+    artifact it says it produced, re-run the check it says passed, grep the
+    output it says exists. One bounce per session; sessions that verify
+    after delegating (the mined fable pattern) never see this gate.
+    """
+    if int(ledger.get("subagent_blocks") or 0) >= MAX_SUBAGENT_BLOCKS:
+        return False, ""
+    subagent_seq = int(ledger.get("subagent_seq") or 0)
+    if subagent_seq <= 0:
+        return False, ""
+    if not final_text or not COMPLETION_CLAIM_RE.search(final_text):
+        return False, ""
+    if has_verification_after(ledger, subagent_seq):
+        return False, ""
+    reason = (
+        "fable-gate(subordinate-evidence): this session delegated work to a "
+        "subagent and the final answer declares completion, but no "
+        "verification command ran AFTER the delegate returned. A delegate's "
+        "'done/success' is a claim, not evidence — the worst-recurrence "
+        "failure in our incident log is exactly this (fabricated 'success' "
+        "text with no tool calls behind it, 'Connected'/'sent' flags that "
+        "were false). Independently re-derive one load-bearing claim from "
+        "the delegate's report: stat/read the artifact it says it produced, "
+        "re-run the test it says passed, or grep/count the output it cites — "
+        "then cite that check. If the delegate's output is genuinely "
+        "unverifiable here, say so explicitly and stop again — this gate "
+        "bounces once."
     )
     return True, reason

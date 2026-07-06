@@ -33,6 +33,7 @@ try:
         should_block_absence,
         should_block_claim_evidence,
         should_block_stop,
+        should_block_subordinate_evidence,
     )
 except Exception:
     sys.exit(0)
@@ -71,6 +72,15 @@ def main() -> int:
         block, reason = should_block_claim_evidence(ledger, final_text)
         if block:
             ledger["claim_blocks"] = int(ledger.get("claim_blocks") or 0) + 1
+            save_ledger(input_data, ledger)
+            print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
+            return 0
+        # Subordinate-evidence check (ledger v4) — a delegate's "done" is a
+        # claim, not evidence; completion after a subagent needs one
+        # independent re-derivation recorded after the delegate returned.
+        block, reason = should_block_subordinate_evidence(ledger, final_text)
+        if block:
+            ledger["subagent_blocks"] = int(ledger.get("subagent_blocks") or 0) + 1
             save_ledger(input_data, ledger)
             print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
         return 0

@@ -15,9 +15,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 try:
     from fable_lib import (
+        SUBAGENT_TOOLS,
         add_unique,
         changed_kinds,
         changed_paths,
+        command_from_input,
         detect_failure,
         git_usage_record,
         load_ledger,
@@ -25,6 +27,7 @@ try:
         save_ledger,
         verification_record,
     )
+    import hashlib
 except Exception:
     sys.exit(0)
 
@@ -34,12 +37,15 @@ def main() -> int:
         input_data = read_stdin_json()
         if not input_data:
             return 0
+        tool_name = str(input_data.get("tool_name") or "")
         kinds = changed_kinds(input_data)
         paths = changed_paths(input_data)
         verification = verification_record(input_data)
         failure = detect_failure(input_data)
         git_use = git_usage_record(input_data)  # ledger v2 — absence-gate evidence
-        if not kinds and not verification and not failure and not git_use:
+        bash_command = command_from_input(input_data) if tool_name == "Bash" else ""
+        subagent = tool_name in SUBAGENT_TOOLS  # ledger v4 — subordinate-evidence anchor
+        if not kinds and not verification and not failure and not git_use and not bash_command and not subagent:
             return 0  # nothing worth recording — ledger untouched
 
         ledger = load_ledger(input_data)
@@ -61,6 +67,15 @@ def main() -> int:
             add_unique(ledger, "git_commands", [git_use["command"]])
             if git_use["boundary"]:
                 ledger["boundary_expansion_seen"] = True
+        if bash_command:
+            # ledger v4 — blind-retry anchor: every Bash outcome updates the
+            # (command hash, failed?) pair the PreToolUse retry gate reads.
+            ledger["last_bash_cmd_hash"] = hashlib.sha256(
+                bash_command.strip().encode("utf-8", "replace")
+            ).hexdigest()[:16]
+            ledger["last_bash_failed"] = bool(failure)
+        if subagent:
+            ledger["subagent_seq"] = seq  # ledger v4 — subordinate-evidence anchor
         save_ledger(input_data, ledger)
         return 0
     except Exception:
