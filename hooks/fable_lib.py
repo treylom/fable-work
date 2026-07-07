@@ -65,6 +65,8 @@ DEFAULT_LEDGER: dict[str, Any] = {
     "subagent_seq": 0,         # event_seq of the most recent Task/Agent (subagent) call
     "delegate_report_seq": 0,  # event_seq of the most recent delegate-report file Read (v4.1)
     "subagent_blocks": 0,      # subordinate-evidence gate bounce count
+    # --- ledger v5 (2026-07-08: prompt-advance gate — interview→prompt→execute) ---
+    "prompt_gate_bounced": False,  # the single prompt-advance bounce already spent
     "event_seq": 0,          # monotonic event counter (code-review feedback — closes the
                               # "verify succeeds, then code changes" ordering bypass)
     "last_gated_seq": 0,     # event_seq of the most recent gated (harness/code) change
@@ -249,7 +251,7 @@ def load_ledger(input_data: dict[str, Any]) -> dict[str, Any]:
     for key in ("event_seq", "last_gated_seq", "stop_blocks", "continuation_blocks", "surfacing_blocks", "absence_blocks", "claim_blocks", "retry_blocks", "subagent_seq", "delegate_report_seq", "subagent_blocks"):
         if not isinstance(ledger.get(key), int):
             ledger[key] = 0
-    for key in ("boundary_expansion_seen", "last_bash_failed"):
+    for key in ("boundary_expansion_seen", "last_bash_failed", "prompt_gate_bounced"):
         if not isinstance(ledger.get(key), bool):
             ledger[key] = False
     if not isinstance(ledger.get("last_bash_cmd_hash"), str):

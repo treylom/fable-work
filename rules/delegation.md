@@ -10,3 +10,12 @@ Trigger: you are about to hand a task to a sub-agent, a worker process, or anoth
 - **Disambiguate scope verbs before acting on them.** "Register the automation" is not "run it now"; "fix the format" is not "replace the content"; "all N items" is not any subset of them. Each of these cost a real redo (one with the user shouting). When the scope word is ambiguous, one clarifying line is cheaper than the wrong interpretation executed well.
 - **Decompose multi-part instructions into a checklist first.** Executing a 7-part instruction by gist produced 8 mistakes in a day. Write the checklist, execute against it, and diff the result against the *original wording* — not your memory of it — before reporting done.
 - **Scope changes propagate the same turn they happen.** If new information changes the spec mid-flight, patch the spec document and re-dispatch the delta immediately — "I'll update the doc when it's over" is where drift starts.
+- **Reach for parallel structure when the work is parallel.** Exploration
+  across many files, multi-angle review, research sweeps, and bulk
+  repetitive transforms belong in subagents or a workflow fan-out — one
+  context reading everything serially is slower AND fills up with noise
+  that crowds out judgment. Keep sequential-dependent work (design → edit →
+  verify on the same files) in your own hands. Quick test: if two parts of
+  the task would not need to read each other's intermediate output, they
+  can run as separate agents; if a stage needs *all* prior results at once,
+  that stage is the barrier and everything else pipelines around it.
