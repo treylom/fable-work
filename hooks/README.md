@@ -79,7 +79,7 @@ don't overwrite existing hooks). Use the **absolute path** from step 1:
     ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit|Bash|Task|Agent",
+        "matcher": "Write|Edit|Bash|Task|Agent|Read",
         "hooks": [
           { "type": "command", "command": "python3 $HOME/.claude/fable-hooks/verify-ledger.py" }
         ]
@@ -98,9 +98,14 @@ don't overwrite existing hooks). Use the **absolute path** from step 1:
 ```
 
 `verify-ledger.py` goes on `PostToolUse` (matched to the tools that change
-state or delegate work — `Write|Edit|Bash|Task|Agent`; the `Task|Agent`
+state or delegate work — `Write|Edit|Bash|Task|Agent|Read`; the `Task|Agent`
 part anchors the subordinate-evidence check, so include it even if your
-sessions rarely delegate); `stop-verify-gate.py` goes on `Stop`, which
+sessions rarely delegate. `Read` anchors that check's file-mediated
+variant: reading a delegate-report file — a path matching
+`worker-report` / `delegate_report` / `subagent-report` — counts as
+consuming a delegate's claim, since much real delegation reports back
+through a file rather than a Task/Agent return value; ordinary reads
+never arm it); `stop-verify-gate.py` goes on `Stop`, which
 takes no matcher — it always fires on every turn-end. All scripts find
 `fable_lib.py` next to themselves, so keep them together.
 
@@ -112,7 +117,7 @@ takes no matcher — it always fires on every turn-end. All scripts find
 > ```json
 > "PostToolUse": [
 >   { "matcher": "...", "hooks": [ /* your existing hook */ ] },
->   { "matcher": "Write|Edit|Bash|Task|Agent", "hooks": [
+>   { "matcher": "Write|Edit|Bash|Task|Agent|Read", "hooks": [
 >       { "type": "command", "command": "python3 $HOME/.claude/fable-hooks/verify-ledger.py" } ] }
 > ]
 > ```

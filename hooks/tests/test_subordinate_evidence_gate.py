@@ -119,6 +119,41 @@ class SubordinateEvidenceGateTests(unittest.TestCase):
         proc = run_hook(STOP_GATE, self.stop_payload("중간 상황 공유 — 다음 단계로 넘어가는 중입니다."), self.env)
         self.assertFalse(blocked(proc), proc.stdout)
 
+    # --- v4.1 file-mediated delegation anchor ---
+    def read_event(self, file_path: str, session: str = "s1") -> dict:
+        return {
+            "tool_name": "Read",
+            "tool_input": {"file_path": file_path},
+            "tool_response": {"output": "Worker says: all 12 icons produced, hashes verified."},
+            "cwd": EXAMPLE_CWD,
+            "session_id": session,
+        }
+
+    def test_worker_report_read_then_done_blocks(self) -> None:
+        self.record(self.read_event("/workspace/example-project/worker-report.md"))
+        proc = run_hook(STOP_GATE, self.stop_payload("워커 보고 검토까지 끝 — 완료했습니다."), self.env)
+        self.assertTrue(blocked(proc), proc.stdout)
+        self.assertIn("subordinate-evidence", proc.stdout)
+
+    def test_worker_report_read_then_verify_passes(self) -> None:
+        self.record(self.read_event("outputs/delegate_report.txt"))
+        self.record(self.bash_event("shasum -a 256 outputs/*.png", "3 files hashed exit code: 0"))
+        proc = run_hook(STOP_GATE, self.stop_payload("Cross-checked the worker's claims — done."), self.env)
+        self.assertFalse(blocked(proc), proc.stdout)
+
+    def test_ordinary_read_does_not_anchor(self) -> None:
+        self.record(self.read_event("/workspace/example-project/README.md"))
+        proc = run_hook(STOP_GATE, self.stop_payload("문서 확인 완료했습니다."), self.env)
+        self.assertFalse(blocked(proc), proc.stdout)
+
+    def test_delegate_report_seq_survives_reload(self) -> None:
+        # regression guard: DEFAULT_LEDGER whitelist must carry the v4.1 key
+        # across events (the load_ledger key-filter trap, 2026-07-06).
+        self.record(self.read_event("worker-report.md"))
+        self.record(self.bash_event("echo unrelated", "unrelated exit code: 0"))
+        proc = run_hook(STOP_GATE, self.stop_payload("전부 완료했습니다."), self.env)
+        self.assertTrue(blocked(proc), proc.stdout)
+
     # --- boundary ---
     def test_kill_switch(self) -> None:
         self.record(self.subagent_event())

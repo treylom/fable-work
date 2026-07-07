@@ -103,7 +103,7 @@ settings = {
     "hooks": {
         "PreToolUse": [{"matcher": "Bash", "hooks": pre}],
         "PostToolUse": [{
-            "matcher": "Write|Edit|Bash|Task|Agent" if v4 else "Write|Edit|Bash",
+            "matcher": "Write|Edit|Bash|Task|Agent|Read" if v4 else "Write|Edit|Bash",
             "hooks": [{"type": "command", "command": hooks("verify-ledger.py")}],
         }],
         "Stop": [{"hooks": [

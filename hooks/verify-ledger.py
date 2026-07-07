@@ -20,6 +20,7 @@ try:
         changed_kinds,
         changed_paths,
         command_from_input,
+        delegate_report_read,
         detect_failure,
         git_usage_record,
         load_ledger,
@@ -45,7 +46,8 @@ def main() -> int:
         git_use = git_usage_record(input_data)  # ledger v2 — absence-gate evidence
         bash_command = command_from_input(input_data) if tool_name == "Bash" else ""
         subagent = tool_name in SUBAGENT_TOOLS  # ledger v4 — subordinate-evidence anchor
-        if not kinds and not verification and not failure and not git_use and not bash_command and not subagent:
+        delegate_read = delegate_report_read(input_data)  # ledger v4.1 — file-mediated delegation
+        if not kinds and not verification and not failure and not git_use and not bash_command and not subagent and not delegate_read:
             return 0  # nothing worth recording — ledger untouched
 
         ledger = load_ledger(input_data)
@@ -76,6 +78,8 @@ def main() -> int:
             ledger["last_bash_failed"] = bool(failure)
         if subagent:
             ledger["subagent_seq"] = seq  # ledger v4 — subordinate-evidence anchor
+        if delegate_read:
+            ledger["delegate_report_seq"] = seq  # ledger v4.1 — file-mediated delegation anchor
         save_ledger(input_data, ledger)
         return 0
     except Exception:
