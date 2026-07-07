@@ -81,6 +81,22 @@ A fixture is just a directory. At minimum:
 - Any supporting files the task actually needs (buggy source, test files,
   a small repo scaffold, sample data, etc.).
 
+### Ceiling fixtures — rotate, don't average over them
+
+A fixture whose *lowest-scoring arm* still averages 92+ discriminates
+nothing: every condition passes it, so it only pads suite averages and
+dilutes the signal from the fixtures that actually separate arms (this is
+how a suite average can look fine while the trap fixtures scream). Track
+per-fixture, per-arm averages from your run ledgers and rotate ceiling
+fixtures out of headline scoring — keep them as regression canaries at
+most, or redesign them with a harder trap.
+
+Measured on this framework's own ledgers (all arms, min-arm average,
+2026-07-07): `blind-retry-diagnosis` (95.4), `research-recency-conflict`
+(94.5), `fact-check-bidirectional` (94.0), `knowledge-store-plan` (94.0)
+are at ceiling; `qa-cards-no-fabrication` (91.7) is borderline. The rest
+still discriminate.
+
 ### Runtime-planted traps (`materialize.sh`)
 
 Some fixtures need to plant sensitive-looking content — secrets, PII-shaped
