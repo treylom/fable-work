@@ -69,6 +69,6 @@ Clip 2" as the reason for a thin structure, scores low.
   language for tone/visual continuity only = pass (90+).
 - Missing the hook or the recap slide but otherwise well-sized and
   well-structured = **P2** (minor completeness gap, not the core trap).
-- Also explicitly does the runtime math (e.g., "~15 slides at ~45
+- Also explicitly does the runtime math (e.g., "\~15 slides at \~45
   sec/slide ≈ 12 min") or explicitly flags the format-vs-content
   distinction in its own report = 95+.
