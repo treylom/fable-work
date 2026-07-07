@@ -52,6 +52,15 @@ PY
     echo "## work/ file listing (post-run)"
     find . -type f -newer TASK.md 2>/dev/null | head -40
     echo
+    # Full listing alongside the mtime-filtered one: the -newer filter goes
+    # silently wrong when mtimes lie — a copied run dir (cp without -a) drops
+    # real deliverables (measured: v2 pilot false P0, deliverables present but
+    # filtered out), and a backdated file (mtime-trap fixtures) never appears
+    # at all. The judge needs the unfiltered ground truth next to the filtered
+    # view.
+    echo "## work/ file listing (all files, unfiltered)"
+    find . -type f 2>/dev/null | head -60
+    echo
     echo "## Diff-relevant files"
     for f in $(find . -maxdepth 2 -name "*.md" -newer TASK.md 2>/dev/null | head -6); do
       echo "--- $f (first 120 lines)"; head -120 "$f"
