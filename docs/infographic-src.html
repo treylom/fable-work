@@ -39,6 +39,7 @@
         radial-gradient(circle at 78% 22%, rgba(12, 61, 143, 0.07), transparent 26%),
         #fff;
       overflow: hidden;
+      box-shadow: 0 20px 50px rgba(7, 26, 61, 0.15);
     }
 
     h1 {
@@ -210,11 +211,16 @@
 
     .p0-emphasis {
       align-self: start;
-      margin-top: 18px;
+      margin-top: 12px;
       color: var(--navy);
       font-size: 34px;
       font-weight: 950;
       white-space: nowrap;
+      background: var(--cyan);
+      border: 3px solid var(--teal-dark);
+      padding: 6px 20px;
+      border-radius: 30px;
+      box-shadow: 0 4px 10px rgba(0, 108, 112, 0.15);
     }
 
     .p0-emphasis b:first-of-type {
@@ -280,6 +286,7 @@
       line-height: 1.16;
       font-weight: 850;
       color: var(--teal-dark);
+      word-break: keep-all;
     }
 
     .chip-text .big {
