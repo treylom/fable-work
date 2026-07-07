@@ -38,10 +38,44 @@ Optional extras from the upstream project, if you want stronger local policy:
 - `rules/` — example command-policy rules, adaptable into an active Codex rules layer.
 - `examples/permissions.toml` — an example secret-file access policy.
 
+## Install the bundled `tofable` Codex gates
+
+Use this section only if you specifically want the `tofable` gates shipped in this repository. The upstream plugin above remains the faster default for most Codex users.
+
+The bundled gates live under [`gates/`](gates/) and are wired by [`gates/hooks.json`](gates/hooks.json). They port the repository's `hooks/` behavior into Codex's four hook events:
+
+| Codex event | Bundled gate |
+|---|---|
+| `UserPromptSubmit` | Starts a clean per-session gate ledger. |
+| `PreToolUse` | Runs surfacing checks before blind-retry checks; each denial is one-shot so the user can continue after acknowledging the issue. |
+| `PostToolUse` | Records evidence only. It never blocks completed tool calls. |
+| `Stop` | Runs one dispatcher for verification, absence-claim, claim-evidence, subordinate-evidence, and continuation checks. |
+
+To install manually:
+
+1. Copy or vendor this repository to a stable local directory.
+2. Register or merge [`gates/hooks.json`](gates/hooks.json) into your Codex hooks configuration. If your Codex setup does not provide `PLUGIN_ROOT`, replace `${PLUGIN_ROOT}` in the commands with the absolute path to this repository root.
+3. Restart Codex and review/trust the newly registered hooks before relying on them.
+4. Validate from this repository root:
+
+   ```bash
+   python3 -m json.tool codex/gates/hooks.json
+   python3 -m py_compile codex/gates/*.py codex/gates/tests/*.py
+   python3 -m unittest discover -s codex/gates/tests
+   ```
+
+Runtime toggles:
+
+- `FABLE_GATE_OFF=1` disables the bundled gates.
+- `FABLE_GATE_PILOT=1` makes blocking gates warn instead of blocking.
+- `FABLE_STATE_DIR=<dir>` sets the local ledger directory. By default, the gates use a user-local state directory.
+
+Implementation note: the Codex event wiring shape follows the upstream plugin's hook-layout pattern, but the gate logic here is ported from this repository's own `hooks/` layer.
+
 ## Relationship between this repo and `fable-ish-codex`
 
 - **`fable-ish-codex`** is the origin implementation: Codex-native, Apache-2.0, maintained by Pandoll-AI. If you're on Codex, prefer it — it's the maintained, native plugin.
-- **`tofable`** (this repository) generalizes the same hook lifecycle for use in coding-agent harnesses other than Codex, and adds a benchmark loop (see [`bench/`](../bench/)) for measuring how much of the target "working style" transfer actually shows up in scored task performance rather than just being installed.
+- **`tofable`** (this repository) generalizes the same hook lifecycle for use in coding-agent harnesses other than Codex, adds the bundled Codex gates above for users who want this repository's stricter gates on Codex, and adds a benchmark loop (see [`bench/`](../bench/)) for measuring how much of the target "working style" transfer actually shows up in scored task performance rather than just being installed.
 - Use [`../hooks/`](../hooks/) in this repo only if your harness is not Codex, or if you specifically need the harness-agnostic port. On Codex, the upstream plugin above is the more direct and better-maintained path.
 
 ## Limits
