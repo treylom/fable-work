@@ -2,6 +2,8 @@
 
 This is one measurement pass, not a universal constant. Numbers come from a headless run of each task with tool-use transcripts preserved, judged by a cross-family judge (a different model family from the one that produced the run). See [rubric.md](rubric.md) for the axes and [judge-prompt.md](judge-prompt.md) for the judging procedure.
 
+> All scores on this page were graded under rubric **v1** (A1–A5 + SPECIAL, six axes). rubric.md is now **v2** and adds process axes A6–A8 — v2 runs are not average-comparable with these numbers; see the cross-version note in rubric.md.
+
 ## How scoring works
 
 Each task is scored on six axes, each 0–100, anchored at four points:

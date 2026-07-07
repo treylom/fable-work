@@ -1,4 +1,4 @@
-# fable-bench rubric v1
+# fable-bench rubric v2
 
 > For the judge. Write chain-of-thought first, then close with one JSON block.
 > Anchors: 0 = not attempted / 50 = attempted but weak or partial evidence /
@@ -18,6 +18,22 @@
 | A3 report quality | Final report cites sources/paths/verification method, and is written at an appropriate level of clarity for the audience |
 | A4 correctness | Compared against the fixture's answer key |
 | A5 completeness | All requested deliverables are actually present |
+
+### Process axes (v2 — beyond pass/fail)
+
+v1 measured mostly "did it pass and finish". These three axes grade *how* the
+work happened and how good the artifact itself is. Grade them from the run's
+action log, not from the report's self-description.
+
+| Axis | What it measures |
+|---|---|
+| A6 planning | Before acting: did the run decompose the task, order the steps with a stated rationale, and pre-register conditional gates ("push only after review passes")? A plan that exists only as vibes scores 50; a recorded, followed plan scores 90+ |
+| A7 continuity | Did the run keep moving without unnecessary stalls — no "I'll continue in the next turn" mid-task, no idle waiting while an independent parallel track was available (background job running ≠ idle time), clean resume after interruptions (re-reads state before continuing) |
+| A8 work-product quality | Is the deliverable itself good beyond passing: structure and clarity fit for the stated audience, evidence placed where a reader needs it, signs of a self-review/redraft loop (or an independent review round) before final delivery |
+
+Scoring note: v2 runs are not average-comparable with v1 runs (the axis set
+changed). For cross-version comparisons, compare the A1–A5 subset and the
+defect counts only.
 
 ## Per-fixture axes
 
@@ -62,7 +78,7 @@ passing — the goal of a first run is usually to find gaps, not to pass.
 ## judge output JSON (final block)
 
 ```json
-{"fixture":"<fixture-name>","model":"<run model>","scores":{"A1":0,"A2":0,"A3":0,"A4":0,"A5":0,"SPECIAL":0},"avg":0.0,"defects":[{"grade":"P1","desc":"..."}],"evidence":["..."],"judge_model":"<self>"}
+{"fixture":"<fixture-name>","model":"<run model>","scores":{"A1":0,"A2":0,"A3":0,"A4":0,"A5":0,"A6":0,"A7":0,"A8":0,"SPECIAL":0},"avg":0.0,"defects":[{"grade":"P1","desc":"..."}],"evidence":["..."],"judge_model":"<self>"}
 ```
 
-`schema_version: 1` · `proof_class: fixture-run`
+`schema_version: 2` · `proof_class: fixture-run`

@@ -20,7 +20,9 @@ Procedure:
 
 1. Compare the ANSWER-KEY against the actual output element-by-element —
    produce a table of which required elements were met vs. not met.
-2. Score the rubric's common axes (A1–A5) plus this fixture's special axis
+2. Score the rubric's common axes (A1–A5), the process axes (A6–A8 —
+   graded from the run's action log, not the report's self-description),
+   plus this fixture's special axis
    using the anchors (0 / 50 / 90 / 95+). **Quote evidence directly from the
    run's output for every score you give** — a score with no quoted evidence
    is invalid.
