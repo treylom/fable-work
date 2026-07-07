@@ -207,7 +207,7 @@ def data_root() -> Path:
     """Ledger storage root.
 
     Override with FABLE_STATE_DIR. Default: XDG_STATE_HOME (or
-    ~/.local/state if unset) / fable-work / ledger — i.e. outside any
+    ~/.local/state if unset) / tofable / ledger — i.e. outside any
     project working tree by default.
     """
     env = os.environ.get("FABLE_STATE_DIR")
@@ -216,7 +216,7 @@ def data_root() -> Path:
     else:
         xdg = os.environ.get("XDG_STATE_HOME")
         state_home = Path(xdg).expanduser() if xdg else Path.home() / ".local" / "state"
-        base = state_home / "fable-work" / "ledger"
+        base = state_home / "tofable" / "ledger"
     return base.resolve()
 
 
