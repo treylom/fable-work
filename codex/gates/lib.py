@@ -381,19 +381,20 @@ def changed_paths(input_data: dict[str, Any]) -> list[str]:
     tool_name = str(input_data.get("tool_name") or "")
     tool_input = input_data.get("tool_input")
     paths: list[str] = []
-    if isinstance(tool_input, dict):
-        file_path = tool_input.get("file_path")
-        if file_path:
-            paths.append(str(file_path))
-        command = str(tool_input.get("command") or tool_input.get("patch") or "")
-        paths.extend(PATCH_PATH_RE.findall(command))
-    elif isinstance(tool_input, str):
-        paths.extend(PATCH_PATH_RE.findall(tool_input))
     if tool_name == "apply_patch":
+        if isinstance(tool_input, dict):
+            command = str(tool_input.get("command") or tool_input.get("patch") or "")
+            paths.extend(PATCH_PATH_RE.findall(command))
+        elif isinstance(tool_input, str):
+            paths.extend(PATCH_PATH_RE.findall(tool_input))
         return paths or ["patch"]
     if tool_name in {"Edit", "Write", "MultiEdit", "NotebookEdit"}:
+        if isinstance(tool_input, dict):
+            file_path = tool_input.get("file_path")
+            if file_path:
+                paths.append(str(file_path))
         return paths or ["edit"]
-    return paths
+    return []
 
 
 def changed_kinds(input_data: dict[str, Any]) -> list[str]:

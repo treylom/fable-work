@@ -59,6 +59,18 @@ class CodexVerifyLedgerTests(unittest.TestCase):
         run_hook(LEDGER, {**self.session, "tool_name": "apply_patch", "tool_input": {"command": patch}}, self.env)
         self.assertTrue(blocked(self.stop()))
 
+    def test_deep_read_only_code_path_does_not_stale_prior_verify(self) -> None:
+        self.record_verify("python3 -m unittest tests/test_app.py")
+        ledger_path = next((Path(self.tmp.name) / "ledgers").glob("*.json"))
+        before = json.loads(ledger_path.read_text())
+        proc = run_hook(LEDGER, {**self.session, "tool_name": "Read", "tool_input": {"file_path": f"{EXAMPLE_CWD}/src/app.py"}}, self.env)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        after = json.loads(ledger_path.read_text())
+        self.assertEqual(after.get("event_seq"), before.get("event_seq"))
+        self.assertFalse(after.get("changed_files_seen"))
+        self.assertEqual(after.get("changed_paths"), [])
+        self.assertFalse(blocked(self.stop()))
+
     def test_boundary_docs_only_malformed_and_kill_switch_pass(self) -> None:
         self.record_change(f"{EXAMPLE_CWD}/docs/notes.md")
         self.assertFalse(blocked(self.stop()))
