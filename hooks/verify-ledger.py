@@ -66,7 +66,13 @@ def main() -> int:
             }
         git_use = git_usage_record(input_data)  # ledger v2 — absence-gate evidence
         bash_command = command_from_input(input_data) if tool_name == "Bash" else ""
-        subagent = tool_name in SUBAGENT_TOOLS  # ledger v4 — subordinate-evidence anchor
+        # ledger v4 — subordinate-evidence anchor. SubagentStop (the moment a
+        # delegate actually returns) also arms it on harnesses that emit that
+        # event — a strictly better anchor than the Task/Agent tool call.
+        subagent = (
+            tool_name in SUBAGENT_TOOLS
+            or str(input_data.get("hook_event_name") or "") == "SubagentStop"
+        )
         delegate_read = delegate_report_read(input_data)  # ledger v4.1 — file-mediated delegation
         if not kinds and not verification and not failure and not git_use and not bash_command and not subagent and not delegate_read:
             return 0  # nothing worth recording — ledger untouched

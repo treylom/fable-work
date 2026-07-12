@@ -183,6 +183,18 @@ class FableGateTests(unittest.TestCase):
         self.assertTrue(data["last_bash_failed"], "blind-retry anchor must arm on a failure event")
         self.assertTrue(data["last_bash_cmd_hash"], "retry-chain anchor must carry the command hash")
 
+    def test_deep_subagent_stop_event_arms_delegate_anchor(self) -> None:
+        """SubagentStop (delegate actually returned) must move the
+        subordinate-evidence anchor just like a Task/Agent tool call."""
+        r = run_hook(
+            LEDGER_HOOK,
+            {**self.session, "hook_event_name": "SubagentStop", "tool_name": ""},
+            self.env,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        data = json.loads(self.ledger_files()[0].read_text())
+        self.assertGreaterEqual(data["subagent_seq"], 1, "SubagentStop must set the delegate anchor")
+
     # ---------- tier 3: boundary ----------
     def test_boundary_stop_hook_active_passes(self) -> None:
         self.record_change(f"{EXAMPLE_CWD}/.claude/hooks/y.py")
