@@ -4,9 +4,11 @@
 
 | When you are about to… | read | one-line gist |
 |---|---|---|
-| claim work is done / verified / passing | [verification.md](verification.md) | evidence before claims; state the grade; verify the verifier |
-| hand work to a sub-agent / worker / other bot | [delegation.md](delegation.md) | complete HOW up front; check capacity; ack ≠ execution |
+| claim work is done / verified / passing | [verification.md](verification.md) | evidence before claims; state the grade; verify the verifier; quotes & batches checked mechanically |
+| hand work to a sub-agent / worker / other bot | [delegation.md](delegation.md) | complete HOW up front; check capacity; ack ≠ execution; parallel delegates verified per-delegate |
 | stop, defer, or wrap up with goals remaining | [continuation.md](continuation.md) | real blocker? whose call? reported? — triage waiting/hung/dead |
+| deploy a watcher / write a value another automation reads | [automation.md](automation.md) | self-test on real data variants; exclude yourself; check the consumer's schema, not your memory |
+| act on a compressed option label, conflicting directives, or a literal path | [instruction-fidelity.md](instruction-fidelity.md) | restate your reading before spending; literal paths used literally |
 | edit code or config | *(write your own — e.g. blast-radius check before, 3-step verify after)* | |
 | write to shared storage / publish externally | *(write your own — e.g. independent review gate before anything public)* | |
 | assert something "doesn't exist / is broken" | *(write your own — e.g. widen the search before concluding absence)* | |

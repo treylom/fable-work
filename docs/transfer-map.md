@@ -63,8 +63,26 @@ check possible or wanted).
 | 10 | report blockers immediately, with whose-decision routing | ◻ | `continuation.md` | step 3 |
 | 11 | judgment under ambiguity (gating a risky step, honoring a constraint) | — not portable; measured in `bench/` (orchestration 96.3 vs 88.3, constrained-writing 93.3 vs 76.7) | | |
 
-Mined additions from the 2026-07-12 full-corpus readout land as new rows
-here (and as rules/gates) — see the changelog at the bottom.
+Mined rows from the 2026-07-12 full-corpus readout (317 digest chunks →
+564 style patterns + 371 incidents → 24 rule candidates → 9 survived
+adversarial verification against existing assets):
+
+| # | Mined role / failure axis | Surface it landed on |
+|---|---|---|
+| 12 | quote/attribution fidelity in delegated or transcript-based output (9+ recurrences) | `rules/verification.md` ("quotes are verified mechanically") — gate upgrade candidate for claim-evidence |
+| 13 | batch deliverables verified per-item, not by sample (4 recurrences) | `rules/verification.md` ("a sample is not a batch") |
+| 14 | parallel delegations tracked per-delegate — the subordinate-evidence gate's single session watermark is a **verified mechanical gap** (any one verification passes the whole parallel set) | `rules/delegation.md`; per-delegate anchors = next gate work (see cycle-2 runbook) |
+| 15 | required-reading lists diffed against actual Read history (3 recurrences) | `rules/delegation.md` |
+| 16 | watchers self-tested on real data variants; silent states proven silent (5 incidents, 2 false-stale storms) | `rules/automation.md` (new) |
+| 17 | shared structured values checked against their consumer's schema (4 incidents, incl. a 128-reinjection loop) | `rules/automation.md` (new) |
+| 18 | ambiguous option labels / conflicting directives restated before costly work (3 redos) | `rules/instruction-fidelity.md` (new) |
+| 19 | literal paths used literally (3 incidents) | `rules/instruction-fidelity.md` (new) |
+
+15 further candidates were **rejected** by the adversarial pass — mostly
+because an existing rule or memory already covered them more precisely, in
+two cases because the cited evidence didn't survive source-checking. The
+kill list is part of the method: a rule layer that only ever grows collects
+duplicates, and duplicates dilute attention.
 
 ## Ledger v5.1 — a tuning example of the same principle
 
@@ -91,3 +109,9 @@ can actually exist for a given change kind.
 
 - 2026-07-12 — initial map; ledger v5.1 tuning; `/tofable` skill (dual
   platform) introduced; roles 1–10 verified against the full-corpus readout.
+- 2026-07-13 — mined rows 12–19 landed (2 rule files extended, 2 new rule
+  files); PostToolUseFailure wiring (failing tool calls fire a separate
+  event on current Claude Code — without it the blind-retry gate never
+  arms); SubagentStop as delegate anchor; known gap registered: per-delegate
+  verification anchors for parallel delegation (subordinate-evidence
+  currently session-scoped).
