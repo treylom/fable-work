@@ -1,0 +1,9 @@
+{
+  "name": "tofable-kit",
+  "description": "The tofable working discipline as an invocable skill (/tofable): honest decomposition, prompt refinement with /prompt integration and a plain-prompting fallback, evidence-first execution, honest completion. Skill-only packaging — the verification gates under hooks/ install separately (see hooks/README.md).",
+  "version": "0.1.0",
+  "author": { "name": "tofukyung", "url": "https://github.com/treylom" },
+  "homepage": "https://github.com/treylom/tofable",
+  "repository": "https://github.com/treylom/tofable",
+  "license": "MIT"
+}
