@@ -1,7 +1,7 @@
 # Gate audit playbook — decide which gates each bot/agent actually needs
 
 This is the reusable form of a live audit we ran on 2026-07-13 across a
-6-bot Claude Code fleet plus two Codex bots (7 days of transcripts, 94 real
+7-bot Claude Code fleet plus two Codex bots (7 days of transcripts, 94 real
 gate blocks labeled one by one). The question it answers: **"is this harness
 too heavy, and which gates should THIS agent run?"** — with measurements,
 not vibes. Every step below names the trap we actually fell into before
@@ -70,7 +70,7 @@ For each real event, read the following turn and label:
 
 Labels are the audit's value — counts alone can't tell a gate that saves
 you from one that nags you. Our labeling flipped the intuitive conclusion:
-the "heavy" verification gates were 70–100% true-positive, while the
+the "heavy" verification gates were roughly 70–100% true-positive, while the
 lightest-looking gate (a workflow reminder) was ~0/8 useful — and the fixes
 that mattered were *false-positive repairs*, not removals.
 
@@ -128,8 +128,10 @@ speed numbers explicitly — ours flipped the intuition:
 
 - **Per-hook latency is noise.** Every gate measured 16–30ms per invocation
   (piped dummy payloads). A full 8-hook PreToolUse chain: ~0.2s per Bash
-  call; a 14-hook Stop chain against an 18MB transcript: ~0.4s. Nobody can
-  feel this.
+  call; a 14-hook Stop chain against the fleet's largest single-session
+  transcript (18MB): ~0.4s. Nobody can feel this — with one caveat: if
+  your Stop chain shells out to network calls (ours runs a git sync we
+  did not time), measure that hook separately.
 - **Prompt-injection cost is small and bounded.** The always-on self-check
   injected ~0.7KB/turn; conditional injectors 0–0.4KB on match only. The
   session front-load (instruction chain, tool schemas) dwarfed all gate
@@ -143,7 +145,7 @@ its latency. A true-positive bounce buys a caught defect for one turn —
 worth it. A false-positive bounce is pure slowdown. Our repairs that
 actually made the fleet faster were all FP repairs (current-turn scoping,
 re-bounce dedup, recomposition pass, context narrowing) — not gate removal:
-removing a 70–100% true-positive gate trades seconds for defects. Track
+removing a roughly 70–100% true-positive gate trades seconds for defects. Track
 `blocks × (1 - TP ratio)` per gate per week; drive it toward zero with
 repairs, and only toward removal when measured value is ~0.
 
