@@ -95,6 +95,8 @@ Two honest footnotes from the same pass. A *compact* variant of the rule files (
 
 ## Weigh your gates: the audit loop
 
+![An inspector robot weighing each gate on a scale, passing the ones that earn their keep](./assets/hero-audit.png)
+
 The obvious worry about a gate harness is weight: *isn't all this checking making the agent slower and noisier?* We stopped speculating and measured it — a full week of live transcripts across a 9-agent fleet, every real gate event extracted and labeled by reading what the agent did next. The answer flipped the intuition twice:
 
 - **Per-gate cost is noise** (16–30ms per hook; the real cost is a bounced turn), so **the speed KPI of a gate system is its false-positive rate** — and the verification gates measured roughly 70–100% true-positive. The fixes that made the fleet faster were false-positive repairs (ledger v5.2 above), not gate removals.
