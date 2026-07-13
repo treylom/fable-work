@@ -105,6 +105,13 @@ can actually exist for a given change kind.
   markers that need a Codex-side equivalent first); the opt-in gates
   (`cutover-review`, `requirements-lock`, `branch-stray-guard`) are
   Claude-side only until someone actually opts in on Codex.
+- Registered gap (2026-07-13 weight-audit ②): ledger v5.2 (`changed_path_seqs`
+  current-turn scoping, `stop_bounced_sets` re-bounce dedup,
+  `surfacing_pending_token/paths` recomposition pass) landed on the Claude
+  side only — the Codex-side equivalent is owned by the Codex adapter track
+  from the same meeting (per-owner boundary: Claude hooks vs Codex gates were
+  deliberately split to avoid concurrent edits; see
+  `meetings/2026-07-13-tofable-weight-audit/02-progress.md`).
 - Codex skill form: the same skill directory ships in a plugin with a
   `.codex-plugin/plugin.json` (`"skills": "./skills/"`); slash commands do
   not exist on Codex, so anything shipped as a Claude `commands/*.md` needs
@@ -126,3 +133,13 @@ can actually exist for a given change kind.
   `UserPromptSubmit` now seeds the ledger on first touch only (it was
   wiping pending obligations every user turn); prompt-advance parity gap
   registered above.
+- 2026-07-13 (weight-audit ②, ledger v5.2) — friction repairs measured from a
+  7-day live-transcript audit of every gate event (94 real blocks labeled):
+  stop-verify bounces now name only paths changed since the last successful
+  verification and the same unverified set bounces at most once per session;
+  surfacing-gate's one-shot pass survives benign recomposition of the same
+  token+target (double-deny pairs measured live, target-overlap guarded);
+  prompt-advance narrowed to substantial solo starts (meeting-SoT-engaged
+  sessions exempt — measured 0-1/8 value ratio came entirely from
+  meeting-dispatched sessions). Red-first: 11 new tests
+  (`hooks/tests/test_weight_audit_repairs.py`), full battery green.

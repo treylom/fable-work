@@ -68,11 +68,14 @@ class PromptAdvanceGateTests(unittest.TestCase):
         self._tmp.cleanup()
 
     def payload(self, transcript: Path, tool: str = "Write") -> dict:
+        # Substantial content: the v5.2 narrowing (weight-audit ②) exempts
+        # incidental small mutations, so contract tests drive an
+        # execution-grade Write (≥ MIN_MUTATION_CHARS).
         return {
             "session_id": "s-prompt-gate",
             "cwd": EXAMPLE_CWD,
             "tool_name": tool,
-            "tool_input": {"file_path": f"{EXAMPLE_CWD}/app.py", "content": "x"},
+            "tool_input": {"file_path": f"{EXAMPLE_CWD}/app.py", "content": "x" * 1600},
             "transcript_path": str(transcript),
         }
 

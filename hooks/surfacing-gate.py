@@ -104,6 +104,36 @@ def cmd_hash(command: str) -> str:
     return hashlib.sha256(command.strip().encode("utf-8", "replace")).hexdigest()[:16]
 
 
+def norm_token(raw: str) -> str:
+    """Normalize a destructive-token match for the one-shot recomposition pass.
+
+    The match includes whatever CMD_ANCHOR consumed ("; rm -rf" vs "rm -rf"),
+    so strip anchor punctuation and collapse whitespace before comparing —
+    measured double-deny pairs (2026-07-13 weight audit) were exactly this:
+    the agent surfaced the op, then re-issued it with a different prefix/cwd
+    and got bounced again on the new hash.
+    """
+    return re.sub(r"\s+", " ", raw.lstrip(";&|$(` \t").strip()).lower()
+
+
+PATHISH_RE = re.compile(r"(?:~|\.{1,2})?/[^\s;|&\"'()]+")
+
+
+def pathish_args(command: str) -> list[str]:
+    return PATHISH_RE.findall(command)
+
+
+def paths_overlap(bounced: list[str], new: list[str]) -> bool:
+    """Component-aware target overlap — the recomposition pass must not let a
+    *different* target sail through on the same token class ("rm -rf /tmp/a"
+    surfaced must not exempt "rm -rf ~/important")."""
+    for x in bounced:
+        for y in new:
+            if x == y or x.startswith(y.rstrip("/") + "/") or y.startswith(x.rstrip("/") + "/"):
+                return True
+    return False
+
+
 def main() -> int:
     try:
         input_data: dict[str, Any] = read_stdin_json()
@@ -126,11 +156,38 @@ def main() -> int:
         digest = cmd_hash(command)
         if digest in surfaced:
             return 0  # same command re-issued after the bounce — intent confirmed
+        token_norm = norm_token(match.group(0))
+        pending_token = str(ledger.get("surfacing_pending_token") or "")
+        pending_paths = ledger.get("surfacing_pending_paths")
+        if not isinstance(pending_paths, list):
+            pending_paths = []
+        new_paths = pathish_args(command)
+        # One-shot pass survives benign recomposition (v5.2, measured
+        # double-deny pairs): same destructive token AND same declared
+        # target(s) — token-only equality is not enough (a different rm
+        # target must surface on its own).
+        same_intent = (
+            bool(token_norm)
+            and pending_token == token_norm
+            and (
+                (bool(pending_paths) and bool(new_paths) and paths_overlap(pending_paths, new_paths))
+                or (not pending_paths and not new_paths)
+            )
+        )
+        if same_intent:
+            ledger["surfacing_pending_token"] = ""
+            ledger["surfacing_pending_paths"] = []
+            surfaced.append(digest)
+            ledger["surfaced_ops"] = surfaced[-40:]
+            save_ledger(input_data, ledger)
+            return 0
         if int(ledger.get("surfacing_blocks") or 0) >= MAX_SURFACING_BLOCKS:
             return 0  # session cap reached — stop adding friction
         surfaced.append(digest)
         ledger["surfaced_ops"] = surfaced[-40:]
         ledger["surfacing_blocks"] = int(ledger.get("surfacing_blocks") or 0) + 1
+        ledger["surfacing_pending_token"] = token_norm
+        ledger["surfacing_pending_paths"] = new_paths[:10]
         save_ledger(input_data, ledger)
         token = match.group(0).strip()[:60]
         print(

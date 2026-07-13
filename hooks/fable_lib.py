@@ -76,6 +76,11 @@ DEFAULT_LEDGER: dict[str, Any] = {
                                # the ordering anchor verification staleness is judged
                                # against; prose harness edits (.md rules/skills) no
                                # longer stale prior verifications
+    # --- ledger v5.2 (2026-07-13 weight-audit ② — measured re-bounce / double-deny friction) ---
+    "changed_path_seqs": {},   # path -> event_seq of its most recent change (current-turn scoping)
+    "stop_bounced_sets": [],   # digests of unverified path-sets already bounced once
+    "surfacing_pending_token": "",  # just-surfaced destructive token — one recomposition passes
+    "surfacing_pending_paths": [],  # path args of the bounced command (target-overlap guard)
     "last_updated": "",
 }
 
@@ -324,9 +329,22 @@ def load_ledger(input_data: dict[str, Any]) -> dict[str, Any]:
     ledger = default_ledger()
     if isinstance(data, dict):
         ledger.update({key: data.get(key, value) for key, value in ledger.items()})
-    for key in ("changed_paths", "change_kinds", "verification_commands", "verification_results", "failures", "surfaced_ops", "git_commands", "retry_bounced"):
+    for key in ("changed_paths", "change_kinds", "verification_commands", "verification_results", "failures", "surfaced_ops", "git_commands", "retry_bounced", "stop_bounced_sets", "surfacing_pending_paths"):
         if not isinstance(ledger.get(key), list):
             ledger[key] = []
+    seq_map = ledger.get("changed_path_seqs")
+    if isinstance(seq_map, dict):
+        clean: dict[str, int] = {}
+        for k, v in seq_map.items():
+            try:
+                clean[str(k)] = int(v)
+            except (TypeError, ValueError):
+                continue
+        ledger["changed_path_seqs"] = clean
+    else:
+        ledger["changed_path_seqs"] = {}
+    if not isinstance(ledger.get("surfacing_pending_token"), str):
+        ledger["surfacing_pending_token"] = ""
     for key in ("event_seq", "last_gated_seq", "last_gated_exec_seq", "stop_blocks", "continuation_blocks", "surfacing_blocks", "absence_blocks", "claim_blocks", "retry_blocks", "subagent_seq", "delegate_report_seq", "subagent_blocks"):
         if not isinstance(ledger.get(key), int):
             ledger[key] = 0
@@ -641,7 +659,38 @@ def should_block_stop(ledger: dict[str, Any]) -> tuple[bool, str]:
         return False, ""
     if has_successful_verification(ledger):
         return False, ""
-    paths = [p for p in ledger.get("changed_paths", []) if p != "edit"][:5]
+    # Ledger v5.2 current-turn scope: name only paths changed after the last
+    # successful verification — earlier paths are presumed covered by it.
+    # Measured 2026-07-13 (7d live audit): re-bounces re-listed the whole
+    # session's file set, so the agent re-argued files it had already
+    # verified turns ago. Legacy ledgers without the seq map keep the old
+    # full-list behavior.
+    seq_map = ledger.get("changed_path_seqs")
+    if isinstance(seq_map, dict) and seq_map:
+        last_success = max(
+            (
+                int(r.get("seq") or 0)
+                for r in ledger.get("verification_results", [])
+                if r.get("success") is True
+            ),
+            default=0,
+        )
+        relevant = sorted(
+            p for p, s in seq_map.items() if p != "edit" and int(s or 0) > last_success
+        )
+    else:
+        relevant = [p for p in ledger.get("changed_paths", []) if p != "edit"]
+    # Ledger v5.2 re-bounce dedup: one bounce per unique unverified path-set
+    # per session — the same set bouncing twice adds friction, not safety
+    # (the agent already answered it once; MAX_STOP_BLOCKS still caps total).
+    digest = hashlib.sha256("\n".join(relevant or sorted(gated)).encode("utf-8")).hexdigest()[:16]
+    bounced_sets = ledger.get("stop_bounced_sets")
+    if not isinstance(bounced_sets, list):
+        bounced_sets = []
+    if digest in bounced_sets:
+        return False, ""
+    ledger["stop_bounced_sets"] = (bounced_sets + [digest])[-20:]
+    paths = relevant[:5]
     reason = (
         "fable-gate: this turn changed harness/code surface files ("
         + (", ".join(paths) if paths else ", ".join(sorted(gated)))

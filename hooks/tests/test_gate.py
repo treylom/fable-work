@@ -97,14 +97,20 @@ class FableGateTests(unittest.TestCase):
 
     # ---------- tier 2: deep (extended behavior) ----------
     def test_deep_change_without_verify_blocks_then_caps(self) -> None:
+        # v5.2 (weight-audit ②): the SAME unverified set bounces once — the
+        # cap (MAX_STOP_BLOCKS=2) is now only reachable via distinct sets.
         self.record_change(f"{EXAMPLE_CWD}/.claude/scripts/baz.sh")
         r1 = self.stop()
         self.assertTrue(blocked(r1), "1st stop = block (stdout JSON)")
         self.assertIn("fable-gate", r1.stdout)
         r2 = self.stop()
-        self.assertTrue(blocked(r2), "2nd stop = block (cap 2)")
+        self.assertFalse(blocked(r2), "2nd stop, identical set = dedup passes (v5.2)")
+        self.record_change(f"{EXAMPLE_CWD}/.claude/scripts/qux.sh")
         r3 = self.stop()
-        self.assertFalse(blocked(r3), "3rd stop = cap exceeded, passes")
+        self.assertTrue(blocked(r3), "new unverified set = 2nd bounce (cap 2)")
+        self.record_change(f"{EXAMPLE_CWD}/.claude/scripts/quux.sh")
+        r4 = self.stop()
+        self.assertFalse(blocked(r4), "cap exceeded, passes")
 
     def test_deep_failed_verification_does_not_satisfy(self) -> None:
         self.record_change(f"{EXAMPLE_CWD}/.claude/hooks/x.py")

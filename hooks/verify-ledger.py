@@ -84,6 +84,16 @@ def main() -> int:
             ledger["changed_files_seen"] = True
             add_unique(ledger, "changed_paths", [p.strip() for p in paths if p])
             add_unique(ledger, "change_kinds", kinds)
+            # ledger v5.2 — per-path change seq, consumed by should_block_stop's
+            # current-turn scoping (weight-audit ②, 2026-07-13)
+            seq_map = ledger.get("changed_path_seqs")
+            if not isinstance(seq_map, dict):
+                seq_map = {}
+            for p in paths:
+                p = p.strip()
+                if p:
+                    seq_map[p] = seq
+            ledger["changed_path_seqs"] = seq_map
             if any(k in {"harness", "code", "config"} for k in kinds):
                 ledger["last_gated_seq"] = seq
                 # ledger v5.1 — only *executable* gated changes stale prior
