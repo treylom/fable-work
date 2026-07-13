@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Scan Claude Code transcripts for REAL gate events (blocks/denies).
 
-The measurement core of docs/gate-audit-playbook.md — extracted from the
-2026-07-13 live weight audit, where three naive approaches all failed before
-this shape worked:
+The measurement core of docs/gate-audit-playbook.md — extracted from a
+live fleet weight audit (2026-07-13), where three naive approaches all
+failed before this shape worked:
 
 1. Grepping gate NAMES over-counts by exactly "number of documents that
    mention the gate" — sessions that read/discuss hook source quote every

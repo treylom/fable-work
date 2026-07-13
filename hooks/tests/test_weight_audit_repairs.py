@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Weight-audit repairs (2026-07-13 meeting, owner decision ②) — red-first.
 
-Three repairs, each reproducing a friction case measured in the 7-day
-live-transcript audit (meetings/2026-07-13-tofable-weight-audit/10-doc):
+Three repairs, each reproducing a friction case measured in a 7-day
+live-transcript audit of every gate event (2026-07-13 fleet weight audit):
 
 1. stop-verify: current-turn scope (reason names only paths changed since
    the last successful verification) + re-bounce dedup (one bounce per
@@ -136,7 +136,7 @@ class SurfacingTokenPassTests(unittest.TestCase):
         self.assertFalse(
             denied(recomposed),
             "benign recomposition of the just-surfaced token must not re-bounce "
-            "(measured double-deny pairs, 10-doc §3.1)")
+            "(measured double-deny pairs in the live audit)")
 
     def test_different_token_still_bounces(self):
         run_gate(SURFACING, self.payload("rm -rf /tmp/scratch-x"), self.env)
@@ -156,7 +156,7 @@ INTERVIEW_LINE = json.dumps({"type": "assistant",
                              "text": "Skill invoked: ouroboros:interview crystallized the task"})
 MEETING_LINE = json.dumps({"type": "assistant", "tool_use": {
     "name": "Edit", "input": {
-        "file_path": "/vault/AI_Second_Brain/meetings/2026-07-13-x/02-progress.md"}}})
+        "file_path": "/workspace/notes/meetings/2026-07-13-x/02-progress.md"}}})
 BIG = "line of substantial deliverable content\n" * 60  # ≥ threshold
 TINY = "x"
 
@@ -196,7 +196,7 @@ class PromptAdvanceNarrowingTests(unittest.TestCase):
         t = self.transcript([MEETING_LINE, INTERVIEW_LINE])
         proc = run_gate(PROMPT_GATE, self.payload(t, session="s-pa2"), self.env)
         self.assertFalse(denied(proc),
-                         "meeting-dispatched work is externally spec'd — measured "
+                         "meeting-dispatched work is externally spec'd — the measured "
                          "0-1/8 value ratio came from exactly these sessions")
 
     def test_substantial_solo_start_still_gates(self):

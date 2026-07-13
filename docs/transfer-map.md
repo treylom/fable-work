@@ -110,8 +110,8 @@ can actually exist for a given change kind.
   `surfacing_pending_token/paths` recomposition pass) landed on the Claude
   side only — the Codex-side equivalent is owned by the Codex adapter track
   from the same meeting (per-owner boundary: Claude hooks vs Codex gates were
-  deliberately split to avoid concurrent edits; see
-  `meetings/2026-07-13-tofable-weight-audit/02-progress.md`).
+  deliberately split to avoid concurrent edits — recorded in the fleet
+  weight-audit meeting log).
 - Codex skill form: the same skill directory ships in a plugin with a
   `.codex-plugin/plugin.json` (`"skills": "./skills/"`); slash commands do
   not exist on Codex, so anything shipped as a Claude `commands/*.md` needs
