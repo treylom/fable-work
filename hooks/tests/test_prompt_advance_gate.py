@@ -58,6 +58,13 @@ ROUTER_PROSE_LINE = json.dumps({"type": "system", "text": "reminder: research/fa
 CHAT_LINE = json.dumps({"type": "user", "text": "just fix the typo in the readme"})
 
 
+PLANNING_ESC_LINE = json.dumps({"type": "user", "text": "직업별로 카드 40~50장 맞추자"})
+PLANNING_RAW_LINE = json.dumps({"type": "user", "text": "신규 시스템 확장 기획안 작성해줘"}, ensure_ascii=False)
+PLANNING_EN_LINE = json.dumps({"type": "user", "text": "please write a spec for the new billing system"})
+MEETING_SOT_LINE = json.dumps({"type": "assistant", "tool_use": {"name": "Read", "input": {"file_path": "meetings/x/02-progress.md"}}})
+INJECTED_PLANNING_LINE = json.dumps({"type": "user", "text": "🔴 [기획·스펙 산출 = /prompt+tofable 선행] rule-router 게이트 안내"}, ensure_ascii=False)
+
+
 class PromptAdvanceGateTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
@@ -116,6 +123,37 @@ class PromptAdvanceGateTests(unittest.TestCase):
     def test_missing_transcript_fails_open(self):  # boundary: fail-open
         payload = self.payload(self.dir / "nope.jsonl")
         self.assertFalse(denied(run_hook(payload, self.env)))
+
+
+
+    # --- planning-directive crystallizing source (2026-07-15, u18 regression) ---
+
+    def test_planning_directive_escaped_korean_denies_once(self) -> None:
+        t = write_transcript(self.dir, [PLANNING_ESC_LINE])
+        self.assertTrue(denied(run_hook(self.payload(t), self.env)))
+        self.assertFalse(denied(run_hook(self.payload(t), self.env)))  # 1-bounce
+
+    def test_planning_directive_raw_korean_denies(self) -> None:
+        t = write_transcript(self.dir, [PLANNING_RAW_LINE])
+        self.assertTrue(denied(run_hook(self.payload(t), self.env)))
+
+    def test_planning_directive_english_denies(self) -> None:
+        t = write_transcript(self.dir, [PLANNING_EN_LINE])
+        self.assertTrue(denied(run_hook(self.payload(t), self.env)))
+
+    def test_planning_directive_not_exempt_by_meeting_sot(self) -> None:
+        # The u18 regression happened INSIDE a meeting-SoT session: a
+        # planning directive means the spec does not exist yet.
+        t = write_transcript(self.dir, [PLANNING_ESC_LINE, MEETING_SOT_LINE])
+        self.assertTrue(denied(run_hook(self.payload(t), self.env)))
+
+    def test_injected_gate_prose_never_triggers_planning(self) -> None:
+        t = write_transcript(self.dir, [INJECTED_PLANNING_LINE])
+        self.assertFalse(denied(run_hook(self.payload(t), self.env)))
+
+    def test_planning_directive_satisfied_by_prompt_pass(self) -> None:
+        t = write_transcript(self.dir, [PLANNING_ESC_LINE, PROMPT_LINE])
+        self.assertFalse(denied(run_hook(self.payload(t), self.env)))
 
 
 if __name__ == "__main__":

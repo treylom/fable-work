@@ -83,6 +83,72 @@ PROMPT_PASS_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Planning-shaped USER directive (owner extension 2026-07-15, u18 card-art
+# omission regression: an inline-authored expansion spec skipped the prompt
+# pass and silently dropped an orthogonal axis — visual assets). A user line
+# that asks for a plan/spec/expansion is itself requirement-crystallizing.
+# Injection discipline: only lines that look like a real user message count,
+# and lines carrying injected-guidance markers are stripped so rule-router
+# gate text mentioning these words can never self-trigger.
+PLANNING_DIRECTIVE_RE = re.compile(
+    r"\uae30\ud68d\uc548|\uc124\uacc4\uc548|\uacc4\ud68d\uc11c"
+    r"|\uc2a4\ud399\s*(?:\ubb38\uc11c)?\s*(?:\uc791\uc131|\uc0b0\ucd9c|\uc7a1|\uc9dc)"
+    r"|\ub85c\ub4dc\ub9f5\s*(?:\uc791\uc131|\uc7a1|\ub9cc\ub4e4)"
+    r"|(?:\uc2dc\uc2a4\ud15c|\ucf58\ud150\uce20|\uce74\ub4dc|\uae30\ub2a5)[^\n\"]{0,14}(?:\ud655\uc7a5|\ucd94\uac00)[^\n\"]{0,10}(?:\ud558\uc790|\uae30\ud68d|\uacc4\ud68d|\ub9de\ucd94)"
+    r"|\uce74\ub4dc[^\n\"]{0,14}\ub9de\ucd94"
+    r"|write\s+(?:a\s+)?(?:spec|design\s+doc|product\s+plan)"
+    r"|draft\s+(?:a\s+)?(?:spec|proposal|plan)",
+    re.IGNORECASE,
+)
+USER_LINE_RE = re.compile(r"\"type\"\s*:\s*\"user\"")
+INJECTED_MARK_RE = re.compile(
+    r"\U0001F6A8|\U0001F534|system-reminder|hook success|rule-router",
+)
+
+
+def _string_values(node: Any, budget: int = 200) -> list[str]:
+    """All string leaves of a parsed JSON value (bounded, fail-open)."""
+    out: list[str] = []
+    stack = [node]
+    while stack and len(out) < budget:
+        cur = stack.pop()
+        if isinstance(cur, str):
+            out.append(cur)
+        elif isinstance(cur, dict):
+            stack.extend(cur.values())
+        elif isinstance(cur, list):
+            stack.extend(cur)
+    return out
+
+
+def planning_directive_end(tail: str) -> int | None:
+    """Last byte offset of a planning-shaped user directive, or None.
+
+    Lines are json-parsed so escaped (ensure_ascii) and raw-UTF-8 transcripts
+    both match. A line counts only if it is user-typed, its text carries no
+    injected-guidance marker, and the planning pattern matches.
+    """
+    last: int | None = None
+    offset = 0
+    for line in tail.splitlines(keepends=True):
+        end = offset + len(line)
+        offset = end
+        if '"user"' not in line and '\\"user\\"' not in line:
+            continue
+        try:
+            obj = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if not isinstance(obj, dict) or obj.get("type") != "user":
+            continue
+        text = "\n".join(_string_values(obj))
+        if INJECTED_MARK_RE.search(text):
+            continue
+        if PLANNING_DIRECTIVE_RE.search(text):
+            last = end
+    return last
+
+
 REASON = (
     "prompt-advance-gate: this session crystallized a task (interview/"
     "brainstorm/plan) but no prompt-engineering pass has run since. The "
@@ -150,16 +216,23 @@ def main() -> int:
             return 0
 
         confirm_matches = list(ROLE_CONFIRM_RE.finditer(tail))
-        if not confirm_matches:
+        planning_end = planning_directive_end(tail)
+        if not confirm_matches and planning_end is None:
             return 0  # no crystallizing phase — trivial work, gate silent
 
-        if MEETING_SOT_RE.search(tail):
+        # Meeting-SoT exemption applies ONLY to the role-confirm path: a
+        # dispatched task arrives spec'd. A planning directive means the
+        # spec does NOT exist yet (2026-07-15 u18 regression happened
+        # inside a meeting-SoT session), so it is never exempt.
+        if planning_end is None and MEETING_SOT_RE.search(tail):
             return 0  # meeting-dispatched work — the spec lives in the meeting SoT
 
         if not substantial(input_data):
             return 0  # incidental mutation / probe dispatch — not a start
 
-        last_confirm = confirm_matches[-1].end()
+        last_confirm = max(
+            [m.end() for m in confirm_matches] + ([planning_end] if planning_end is not None else [])
+        )
         if PROMPT_PASS_RE.search(tail, last_confirm):
             return 0  # prompt pass already ran after role confirmation
 
